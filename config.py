@@ -6,6 +6,10 @@ DB_NAME = "Blancos_Valentina"
 DB_USER = "postgres"
 DB_PASSWORD = "Kantunramirez21"
 
+# Clave secreta para Flask
+SECRET_KEY = 'm2u23in2rni44'
+
+
 # Función para obtener una conexión a la base de datos
 def get_db_connection():
     return psycopg2.connect(

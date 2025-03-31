@@ -32,11 +32,12 @@
                                             <!--primer formulario-->
                                             <form action="/login" method="POST">
                                                 <div class="form-group">
-                                                    <input type="email" name="email_login" class="form-style" placeholder="Correo">
+                                                    <input type="email" name="Email_sesion" class="form-style" placeholder="Correo"><!--La parte de name es como lo va a resivir en la ruta para poder hacer las cosas con la base de datos(CORREO)-->
+                                                    <i class="input-icon uil uil-lock-alt"></i>
                                                     <i class="input-icon uil uil-at"></i>
                                                 </div>    
                                                 <div class="form-group mt-2">
-                                                    <input type="password" name="password_login" class="form-style" placeholder="Contraseña">
+                                                    <input type="password" name="Password_sesion" class="form-style" placeholder="Contraseña"><!--La parte de name es como lo va a resivir en la ruta para poder hacer las cosas con la base de datos(PASSWORD)-->
                                                     <i class="input-icon uil uil-lock-alt"></i>
                                                 </div>
                                                 <button type="submit" class="btn mt-4">Iniciar Sesión</button>
