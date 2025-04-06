@@ -20,20 +20,20 @@ def home():
         
         # Ejecuta una consulta simple para verificar la conexión
         cur.execute('SELECT 1;')
-        result = cur.fetchall()  # Si la consulta es exitosa, devolverá algo
+        cur.fetchall()  # Si la consulta es exitosa, devolverá algo
         
         # Cierra el cursor y la conexión
         cur.close()
         conn.close()
         
-        # Si todo salió bien, muestra mensaje de conexión exitosa en la consola
+        # Mensaje en la terminal
         print("Conexión exitosa a la base de datos!")
-        return render_template('index.html')
-    
+        return render_template('index.html')  # Solo devuelve un mensaje en texto plano
+        
     except Exception as e:
-        # Si ocurrió un error, muestra el error en la consola
+        # Muestra el error en la terminal
         print(f"Error en la conexión: {e}")
-        return render_template('index.html')
+        return "Error en la conexión"  # Devuelve el mensaje de error en texto plano
 #===============================================================================================================
 
 #=====================================RUTAS DE LA SECCIÓN LOGIN================================================
@@ -63,7 +63,7 @@ def login():
         if user:
             session['user_id'] = user[0]  # Guarda el ID del usuario en la sesión
             flash("¡Inicio de sesión exitoso!", "success")
-            return redirect('/')  # Redirige a la página principal
+            return redirect('/punto_venta')  # Redirige a la ruta de punto de venta
 
         # Si no se encuentra el usuario, muestra un mensaje de error
         else:
@@ -81,6 +81,41 @@ def login():
         if conn:
             cur.close()
             conn.close()
+#===========================================RUTAS DE PUNTO DE VENTA========================================================
+@app.route('/punto_venta')
+def punto_venta():
+    return render_template('punto_venta.html')
+
+@app.route('/venta')
+def venta():
+    return render_template('venta.html')   #prueba mientras se verifica la parte del dashboard     
+
+@app.route('/almacen')
+def almacen():
+    return render_template('almacen.html')   #prueba mientras se verifica la parte del dashboard     
+
+@app.route('/empleado')
+def empleado():
+    return render_template('empleado.html')   #prueba mientras se verifica la parte del dashboard     
+
+@app.route('/devolucion')
+def devolucion():
+    return render_template('devolucion.html')   #prueba mientras se verifica la parte del dashboard     
+
+@app.route('/corte')
+def corte():
+    return render_template('corte.html')   #prueba mientras se verifica la parte del dashboard     
+
+@app.route('/apartado')
+def apartado():
+    return render_template('apartado.html')   #prueba mientras se verifica la parte del dashboard     
+
+
+
+
+# =========================================FIN DE RUTAS DE PUNTO DE VENTA====================================================
+
+
 
 
 if __name__ == '__main__':
