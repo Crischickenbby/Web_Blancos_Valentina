@@ -1,0 +1,100 @@
+:root {
+    --background: #0066ff;
+    --table-background: #29263D;
+    --primary: #ffd45e;
+    --text-color: #FFFFFF;
+    --gray: #A0A7B1;
+    --th-background: #2E2B43;
+}
+
+body {
+    font-family: Poppins, sans-serif;
+    margin: 0;
+    background: var(--background);
+    overflow-x: hidden; /* Evitar scroll horizontal */
+}
+
+.table-widget {
+    border-radius: 1rem;
+    background: var(--table-background);
+    padding: 1rem; /* Ajuste del padding para mejor escala */
+    text-align: left;
+    color: var(--text-color);
+    width: 90%; /* Ajustar el ancho según la pantalla */
+    max-width: 1200px;
+    overflow-x: auto; /* Permitir scroll horizontal solo en tablas */
+    margin: 0 auto; /* Centrar el contenido */
+}
+
+.table-widget table {
+    width: 100%;
+    border-collapse: collapse; /* Evitar espacios entre bordes */
+}
+
+.table-widget thead tr {
+    background: var(--th-background);
+}
+
+.table-widget th, .table-widget td {
+    padding: 1rem;
+    font-size: 1rem; /* Texto más ajustado */
+    text-align: left;
+}
+
+.table-widget td {
+    background: transparent;
+}
+
+.table-widget tbody tr:hover {
+    cursor: pointer;
+    background: var(--th-background);
+}
+/*BOTON*/
+button {
+    font-size: 1.4em;
+    padding: 0.6em 0.8em;
+    border-radius: 0.5em;
+    border: none;
+    background-color: #000;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 2px 2px 3px #000000b4;
+  }
+  
+  .container {
+    position: relative;
+    padding: 3px;
+    background: linear-gradient(90deg, #03a9f4, #f441a5);
+    border-radius: 0.9em;
+    transition: all 0.4s ease;
+  }
+  
+  .container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    border-radius: 0.9em;
+    z-index: -10;
+    filter: blur(0);
+    transition: filter 0.4s ease;
+  }
+  
+  .container:hover::before {
+    background: linear-gradient(90deg, #03a9f4, #f441a5);
+    filter: blur(1.2em);
+  }
+  .container:active::before {
+    filter: blur(0.2em);
+  }
+ /*FIN BOTON*/ 
+/*Configuracion del apartado para cada seccion en este caso almacen*/
+ .home-section {
+  position: relative;
+  background: #00ff55;
+  min-height: 100vh;
+  top: 0;
+  left: 78px;
+  width: calc(100% -78px);
+  transition: all 0.5s ease;
+}

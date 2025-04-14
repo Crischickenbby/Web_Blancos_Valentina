@@ -92,7 +92,32 @@ def venta():
 
 @app.route('/almacen')
 def almacen():
-    return render_template('almacen.html')   #prueba mientras se verifica la parte del dashboard     
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Solo traemos los campos que sí queremos mostrar
+        query = query = '''
+            SELECT p."Name", p."Description", p."Quanty", p."Price", c."Category"
+            FROM "Product" p
+            JOIN "Category" c ON p."ID_Category" = c."ID_Category";
+            '''
+
+        cur.execute(query)
+        productos = cur.fetchall() #todo se almacena en una variable llamada productos
+
+        return render_template('almacen.html', productos=productos)#Renderiza la plantilla alamacen y se le pasa la variable de productos para que se muestre en la tabla de la plantilla almacen.html
+
+    except Exception as e:
+        print(f"Error al obtener productos: {e}", flush=True)
+        return "Ocurrió un error al cargar los productos."
+
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+        
+  
 
 @app.route('/empleado')
 def empleado():

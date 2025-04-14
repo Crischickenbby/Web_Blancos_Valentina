@@ -11,7 +11,7 @@
     top: 0;
     height: 100%;
     width: 78px;
-    background: #11101D;
+    background: #141212;
     padding: 6px 14px;
     z-index: 1;
     transition: all 0.5s ease;
@@ -30,7 +30,7 @@
 }
 
 .sidebar .logo-details .logo_name {
-    color: #fff;
+    color: hsl(0, 0%, 100%);
     font-size: 20px;
     font-weight: 600;
     opacity: 0;
@@ -247,7 +247,7 @@
 
 .home-section {
     position: relative;
-    background: #e4e9f7;
+    background: #0044ff;
     min-height: 100vh;
     top: 0;
     left: 78px;

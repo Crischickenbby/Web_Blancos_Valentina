@@ -2,10 +2,10 @@ let sidebar = document.querySelector(".sidebar");
 let closeBtn = document.querySelector("#btn");
 let searchBtn = document.querySelector(".bx-search");
 
-// Asegurarse de que el sidebar esté abierto al cargar la página
+// Asegurarse de que el sidebar esté cerrado al cargar la página
 document.addEventListener("DOMContentLoaded", () => {
     if (sidebar) {
-        sidebar.classList.add("open");
+        sidebar.classList.remove("open"); // Cambiar a remove para que esté cerrado
     }
 });
 
