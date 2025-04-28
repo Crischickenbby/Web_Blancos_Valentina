@@ -1,63 +1,157 @@
-.navbar {
-    box-shadow: 0px 2px 5px #ff5cdc;
-    padding-top: 12px;
-    padding-bottom: 20px;
+/* Fuente general */
+body {
+  background-color: #E5E0DB;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-  .logoNav {
-    box-shadow: 0px 2px 5px #ff5cdc;
-    border-radius: 4px;
-    padding:3px;
+/* Navbar general */
+.custom-navbar {
+  background-color: #D2AB90;
+  box-shadow: 0px 2px 5px #725C4B;
+  padding: 18px 30px; /* Aumenté un poco el padding */
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-/* De busqueda */
-/* From Uiverse.io by alexruix */ 
-.group {
+/* Contenedor */
+.navbar-container {
+  max-width: 1200px;
+  margin: auto;
   display: flex;
-  line-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* Logo */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  font-size: 20px; /* Más grande */
+  text-decoration: none;
+  color: #3C2F2F;
+}
+
+.logo-img {
+  width: 40px;
+  height: 32px;
+  margin-right: 12px;
+  border-radius: 4px;
+  box-shadow: 0px 2px 5px #3C2F2F;
+  padding: 3px;
+}
+
+/* Links */
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.navbar-links a {
+  text-decoration: none;
+  color: #3C2F2F;
+  padding: 10px 15px;
+  font-size: 17px;
+  border-radius: 6px;
+  transition: background-color 0.3s;
+}
+
+.navbar-links a:hover {
+  background-color: #E5E0DB;
+}
+
+/* Buscador */
+.search-group {
+  display: flex;
   align-items: center;
   position: relative;
-  max-width: 190px;
- }
- 
- .input {
-  width: 100%;
+}
+
+.search-input {
   height: 40px;
-  line-height: 28px;
-  padding: 0 1rem;
   padding-left: 2.5rem;
-  border: 2px solid transparent;
   border-radius: 8px;
+  border: 2px solid transparent;
+  background-color: #E5E0DB;
+  transition: 0.3s ease;
+  font-size: 15px;
+}
+
+.search-input:focus,
+.search-input:hover {
   outline: none;
-  background-color: #f3f3f4;
-  color: #0d0c22;
-  transition: .3s ease;
- }
- 
- .input::placeholder {
-  color: #b2a9a9;
- }
- 
- .input:focus, input:hover {
-  outline: none;
-  border-color: #ff5cdc;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 1px #ff5cdc;
- }
- 
- .icon {
+  border-color: #725C4B;
+  background-color: #E5E0DB;
+  box-shadow: 0 0 0 1px #3C2F2F;
+}
+
+.icon {
   position: absolute;
-  left: 1rem;
-  fill: #9f9a9a;
-  width: 1rem;
-  height: 1rem;
- }
- 
- H1{
-  color: #0d0c22;
- }
- 
- 
- 
- 
- 
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  fill: #3C2F2F;
+}
+
+/* Toggle button (responsive) */
+.navbar-toggle {
+  display: none;
+  font-size: 30px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #3C2F2F;
+}
+
+@media (max-width: 768px) {
+  .navbar-toggle {
+    display: block;
+  }
+
+  .navbar-links {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .navbar-links.active {
+    display: flex;
+  }
+
+  .navbar-links a {
+    width: 100%;
+    text-align: auto;
+  }
+
+  .search-group {
+    justify-content: auto;
+    width: 100%;
+    margin-top: 10px;
+  }
+}
+
+/* Estilos para el carrusel */
+.carousel {
+  position: relative;
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.carousel img {
+  width: 100%;
+  height: auto;
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.carousel img.active {
+  display: block;
+}

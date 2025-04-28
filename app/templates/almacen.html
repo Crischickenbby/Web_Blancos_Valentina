@@ -6,16 +6,116 @@
 
 {% block styles %}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/almacen.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<!--------------------------------Contenido de la tabla de almácen-------------------------------------------->
-<article class="table-widget">
-    <div class="caption">
-        <h2>Productos</h2>
+<!-------------------------------- Contenido de la tabla de almacén -------------------------------------------->
+<div class="caption">
+    <h1>Almacén</h1>
+</div>
 
+<div class="Buttons">
+    <!-- Botón para abrir el modal -->
+    <button id="addProductBtn" class="custom-button1">Añadir Producto</button>
+    <button class="custom-button2">Eliminar Producto</button>
+    <!-- Nuevo botón para gestionar categorías -->
+    <button id="manageCategoriesBtn" class="custom-button3">Categorías</button>
+    <div class="inputGroup">
+        <input type="text" id="searchTable" required="" autocomplete="off">
+        <label for="searchTable">Buscar</label>
     </div>
+</div>
+
+<!-- Modal para añadir producto -->
+<div id="addProductModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Añadir Nuevo Producto</h2>
+        <form id="addProductForm">
+            <label for="product-name">Nombre del Producto:</label>
+            <input type="text" id="product-name" name="productName" required>
+
+            <label for="product-description">Descripción:</label>
+            <textarea id="product-description" name="productDescription" rows="3" required></textarea>
+
+            <label for="product-price">Precio:</label>
+            <input type="number" id="product-price" name="productPrice" step="0.01" required>
+
+            <label for="product-quantity">Cantidad:</label>
+            <input type="number" id="product-quantity" name="productQuantity" required>
+
+            <label for="category-select">Categoría:</label>
+            <select id="category-select" name="productCategory" required>
+                {% for categoria in categorias %}
+                <option value="{{ categoria[0] }}">{{ categoria[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="custom-button1">Guardar Producto</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para eliminar producto -->
+<div id="deleteProductModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Eliminar Producto</h2>
+        <div class="inputGroup">
+            <input type="text" id="searchProduct" placeholder="Buscar producto..." autocomplete="off">
+        </div>
+        <ul id="productList">
+            {% for product in productos1 %}
+            <li data-product-id="{{ product[0] }}">
+                {{ product[1] }} - {{ product[2] }} ({{ product[3] }} unidades)
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <button id="deleteSelectedProduct" class="custom-button2">Eliminar Producto</button>
+    </div>
+</div>
+
+<!-- Modal para gestionar categorías -->
+<div id="manageCategoriesModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Gestionar Categorías</h2>
+        
+        <!-- Sección para añadir nueva categoría -->
+        <div class="category-section">
+            <h3>Añadir Nueva Categoría</h3>
+            <form id="addCategoryForm">
+                <div class="inputGroup">
+                    <input type="text" id="categoryName" name="categoryName" required autocomplete="off">
+                    <label for="categoryName">Nombre de Categoría</label>
+                </div>
+                <button type="submit" class="custom-button1">Añadir Categoría</button>
+            </form>
+        </div>
+        
+        <!-- Sección para eliminar categorías existentes -->
+        <div class="category-section">
+            <h3>Categorías Existentes</h3>
+            <ul id="categoryList" class="category-list">
+                {% for categoria in categorias %}
+                <li data-category-id="{{ categoria[0] }}">
+                    {{ categoria[1] }}
+                    <button class="delete-category-btn" data-id="{{ categoria[0] }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<article class="table-widget">
     <table>
+        <thead>
             <tr>
                 <th>Nombre</th>
                 <th>Descripción</th>
@@ -24,18 +124,82 @@
                 <th>Categoría</th>
                 <th>Opciónes</th>
             </tr>
+        </thead>
+        <tbody>
             {% for product in productos %}
             <tr>
-                <td>{{ product[0] }}</td>
                 <td>{{ product[1] }}</td>
                 <td>{{ product[2] }}</td>
-                <td>${{ product[3] }}</td>
-                <td>{{ product[4] }}</td>
-                <td><div class="container"><button class="button">Opciónes</button></div></td>
+                <td>{{ product[3] }}</td>
+                <td>${{ product[4] }}</td>
+                <td>{{ product[5] }}</td>
+                <td class="button-container">
+                    <button class="custom-button1 add-quantity-btn" data-id="{{ product[0] }}">Añadir</button>
+                    <button class="custom-button2 delete-product-btn" data-id="{{ product[0] }}">Eliminar</button>
+                    <button class="custom-button3 edit-product-btn" data-id="{{ product[0] }}">Editar</button>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </article>
-<!--------------------------------FIN de Contenido de la tabla de almácen----------------------------------->
+
+<!-- Modal para añadir cantidad de producto -->
+<div id="addQuantityModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Añadir Cantidad</h2>
+        <form id="addQuantityForm">
+            <p>¿Cuántos productos deseas agregar?</p>
+            <input type="number" id="quantityToAdd" name="quantityToAdd" min="1" required>
+            <button type="submit" class="custom-button1">Añadir</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para eliminar cantidad de producto -->
+<div id="removeQuantityModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Eliminar Cantidad</h2>
+        <form id="removeQuantityForm">
+            <p>¿Cuántos productos deseas eliminar?</p>
+            <input type="number" id="quantityToRemove" name="quantityToRemove" min="1" required>
+            <button type="submit" class="custom-button2">Eliminar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para editar producto -->
+<div id="editProductModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Editar Producto</h2>
+        <form id="editProductForm">
+            <label for="edit-product-name">Nombre del Producto:</label>
+            <input type="text" id="edit-product-name" name="productName" required>
+
+            <label for="edit-product-description">Descripción:</label>
+            <textarea id="edit-product-description" name="productDescription" rows="3" required></textarea>
+
+            <label for="edit-product-price">Precio:</label>
+            <input type="number" id="edit-product-price" name="productPrice" step="0.01" required>
+
+            <label for="edit-category-select">Categoría:</label>
+            <select id="edit-category-select" name="productCategory" required>
+                {% for categoria in categorias %}
+                <option value="{{ categoria[0] }}">{{ categoria[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="modal-button">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+<!-------------------------------- FIN del contenido -------------------------------------------->
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/almacen.js') }}"></script>
 {% endblock %}

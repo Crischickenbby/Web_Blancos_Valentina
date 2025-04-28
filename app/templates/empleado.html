@@ -1,9 +1,181 @@
 {% extends 'punto_venta.html' %}
 
-{% block title %}Crear Empleado{% endblock %}
+{% block page_title %}Gestión de Empleados{% endblock %}
 
-{% block page_title %}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/empleado.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-    <H1>EMPLEADO</H1>
+<div class="caption">
+    <h1>Gestión de Empleados</h1>
+</div>
+
+<div class="buttons-container">
+    <button id="addEmployeeBtn" class="custom-button1">Añadir Empleado</button>
+</div>
+
+<!-- Modal Crear Empleado -->
+<div id="addEmployeeModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Crear Empleado</h2>
+        <form id="crearEmpleadoForm">
+            <div class="inputGroup">
+                <label for="nombreEmpleado">Nombre</label>
+                <input type="text" id="nombreEmpleado" name="nombreEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="inputGroup">
+                <label for="apellidosEmpleado">Apellidos</label>
+                <input type="text" id="apellidosEmpleado" name="apellidosEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="inputGroup">
+                <label for="correoEmpleado">Correo</label>
+                <input type="email" id="correoEmpleado" name="correoEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="inputGroup">
+                <label for="contrasenaEmpleado">Contraseña</label>
+                <input type="password" id="contrasenaEmpleado" name="contrasenaEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="privileges-container">
+                <label>Privilegios:</label>
+                <div class="privilege-switches">
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Vender">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Vender</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Realizar apartado">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Realizar apartado</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Realizar corte de caja">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Realizar corte de caja</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Modificar almacén">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Modificar almacén</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Realizar devolución">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Realizar devolución</span>
+                    </div>
+                </div>
+                <input type="hidden" id="privilegiosEmpleado" name="privilegiosEmpleado" required>
+            </div>
+
+            <button type="submit" class="custom-button1">Crear Cuenta</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Empleado -->
+<div id="editEmployeeModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button" id="closeEditModal">&times;</span>
+        <h2>Editar Empleado</h2>
+        <form id="editarEmpleadoForm">
+            <div class="inputGroup">
+                <label for="editNombreEmpleado">Nombre</label>
+                <input type="text" id="editNombreEmpleado" name="editNombreEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="inputGroup">
+                <label for="editApellidosEmpleado">Apellidos</label>
+                <input type="text" id="editApellidosEmpleado" name="editApellidosEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="inputGroup">
+                <label for="editCorreoEmpleado">Correo</label>
+                <input type="email" id="editCorreoEmpleado" name="editCorreoEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="inputGroup">
+                <label for="editContrasenaEmpleado">Contraseña</label>
+                <input type="password" id="editContrasenaEmpleado" name="editContrasenaEmpleado" required autocomplete="off">
+            </div>
+
+            <div class="privileges-container">
+                <label>Privilegios:</label>
+                <div class="privilege-switches">
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Vender" id="editPrivilegeVender">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Vender</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Realizar apartado" id="editPrivilegeApartado">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Realizar apartado</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Realizar corte de caja" id="editPrivilegeCorte">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Realizar corte de caja</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Modificar almacén" id="editPrivilegeAlmacen">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Modificar almacén</span>
+                    </div>
+                    <div class="privilege-switch">
+                        <label class="switch">
+                            <input type="checkbox" class="privilege-checkbox" data-privilege="Realizar devolución" id="editPrivilegeDevolucion">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Realizar devolución</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="custom-button1">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+<div class="employee-cards-container">
+    {% for empleado in empleados %}
+    <div class="employee-card">
+        <h3>{{ empleado[1] }} {{ empleado[2] }}</h3> <!-- Nombre y Apellidos -->
+        <p><strong>Correo:</strong> {{ empleado[3] }}</p> <!-- Correo -->
+        <div class="card-actions">
+            <button class="custom-button2" data-user-id="{{ empleado[0] }}">Editar</button>
+            <button class="custom-button3" data-user-id="{{ empleado[0] }}">Eliminar</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/empleado.js') }}"></script>
 {% endblock %}
