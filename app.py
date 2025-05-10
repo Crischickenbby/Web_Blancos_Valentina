@@ -1,5 +1,16 @@
 from flask import Flask, jsonify, render_template, flash, redirect, request, session
 from config import get_db_connection, SECRET_KEY
+from functools import wraps
+from flask import redirect, url_for
+from datetime import datetime
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('sesion'))  # Redirige al formulario de inicio de sesión
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Inicializa la aplicación Flask
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static', )
@@ -83,14 +94,114 @@ def login():
             conn.close()
 #===========================================RUTAS DE PUNTO DE VENTA========================================================
 @app.route('/punto_venta')
+@login_required
 def punto_venta():
     return render_template('punto_venta.html')
 
+
+
+#===========================================RUTA DEL APARTADO DE VENTA========================================================
 @app.route('/venta')
+@login_required
 def venta():
-    return render_template('venta.html')   #prueba mientras se verifica la parte del dashboard     
+    return render_template('venta.html')   #prueba mientras se verifica la parte del dashboard  
+
+
+@app.route('/api/registrar_venta', methods=['POST'])
+def registrar_venta():
+    data = request.get_json()
+
+    productos = data.get('productos')
+    total = data.get('total')
+    metodo_pago = data.get('metodo_pago')
+
+    if not productos or not total or not metodo_pago:
+        return jsonify({'message': 'Datos incompletos'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # Fecha y hora actuales como timestamp
+        fecha_hora_actual = datetime.now()
+
+        # Insertar en la tabla Sale
+        cur.execute('INSERT INTO "Sale" ("Date", "Total_Amount", "ID_User") '
+                    'VALUES (%s, %s, %s) RETURNING "ID_Sale";',
+                    (fecha_hora_actual, total, 1))  # Asumimos user_id = 1
+        result = cur.fetchone()
+        print("Resultado de la consulta INSERT:", result)
+        id_sale = result[0]
+
+        # Insertar en Sale_Detail y actualizar stock
+        for producto in productos:
+            subtotal = producto['cantidad'] * producto['precio']
+            cur.execute('INSERT INTO "Sale_Details" ("ID_Sale", "ID_Product", "Quanty", "Subtotal") '
+                        'VALUES (%s, %s, %s, %s);',
+                        (id_sale, producto['id'], producto['cantidad'], subtotal))
+            
+            cur.execute('UPDATE "Product" SET "Quanty" = "Quanty" - %s WHERE "ID_Product" = %s;',
+                        (producto['cantidad'], producto['id']))
+
+        # Obtener el saldo actual en caja
+        cur.execute('SELECT "Current_Effective" FROM "Cash" ORDER BY "ID_Cash" DESC LIMIT 1;')
+        row = cur.fetchone()
+        saldo_actual = row[0] if row else 0
+
+        # Ajustar el saldo según el método de pago
+        if metodo_pago == 1:  # Efectivo
+            nuevo_saldo = saldo_actual + total
+            monto = total  # Monto positivo para reflejar el ingreso
+        else:  # Tarjeta o transferencia
+            nuevo_saldo = saldo_actual  # El saldo no cambia
+            monto = 0  # No afecta el efectivo
+
+        # Insertar en la tabla Cash
+        cur.execute(
+            '''INSERT INTO "Cash" ("Date", "Amount", "Current_Effective", "ID_Sale", "ID_Transaction_Type", "ID_Payment_Method", "ID_User")
+               VALUES (%s, %s, %s, %s, 1, %s, %s);''',
+            (fecha_hora_actual, monto, nuevo_saldo, id_sale, metodo_pago, 1)  # Asumimos user_id = 1
+        )
+
+        conn.commit()
+        return jsonify({'message': 'Venta registrada exitosamente'}), 200
+
+    except Exception as e:
+        conn.rollback()
+        print('Error al registrar venta:', e)
+        return jsonify({'message': 'Error al registrar la venta'}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/productos', methods=['GET'])
+@login_required
+def api_productos():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT "ID_Product", "Name", "Description", "Price", "Quanty" FROM "Product" WHERE "ID_Product_Status" = 1 AND "Quanty" > 0;')
+        productos = cur.fetchall()
+        return jsonify([{
+            "id": p[0],
+            "nombre": p[1],
+            "descripcion": p[2],
+            "precio": float(p[3]),
+            "stock": p[4]
+        } for p in productos])
+    finally:
+        cur.close()
+        conn.close()
+
+
+#===========================================FIN RUTA DEL APARTADO DE VENTA======================================================
+
+
+
 #===========================================RUTA DEL APARTADO DE ALMACÉN========================================================
 @app.route('/almacen')
+@login_required
 def almacen():
     try:
         conn = get_db_connection()
@@ -138,6 +249,7 @@ def almacen():
 
 
 @app.route('/eliminar_producto/<int:product_id>', methods=['PUT'])
+@login_required
 def eliminar_producto(product_id):
     print(f"Petición recibida para eliminar el producto con ID: {product_id}")  # Depuración
     try:
@@ -164,6 +276,7 @@ def eliminar_producto(product_id):
 
 
 @app.route('/agregar_producto', methods=['POST'])
+@login_required
 def agregar_producto():
     try:
         # Obtener datos del formulario
@@ -195,6 +308,7 @@ def agregar_producto():
             conn.close()
 
 @app.route('/incrementar_cantidad_producto', methods=['POST'])
+@login_required
 def incrementar_cantidad_producto():
     try:
         data = request.get_json()
@@ -226,6 +340,7 @@ def incrementar_cantidad_producto():
             conn.close()
 
 @app.route('/reducir_cantidad_producto', methods=['POST'])
+@login_required
 def reducir_cantidad_producto():
     try:
         data = request.get_json()
@@ -264,6 +379,7 @@ def reducir_cantidad_producto():
             conn.close()
 
 @app.route('/actualizar_producto', methods=['POST'])
+@login_required
 def actualizar_producto():
     conn = None
     try:
@@ -306,6 +422,7 @@ def actualizar_producto():
             conn.close()
 
 @app.route('/add_category', methods=['POST'])
+@login_required
 def add_category():
     try:
         data = request.get_json()
@@ -345,6 +462,7 @@ def add_category():
             conn.close()
 
 @app.route('/delete_category', methods=['POST'])
+@login_required
 def delete_category():
     try:
         data = request.get_json()
@@ -606,24 +724,238 @@ def obtener_empleado(user_id):
 
 #=========================================== FIN RUTAS DEL APARTADO DE EMPLEADO========================================================
 
+#===========================================RUTAS DEL APARTADO DE DEVOLUCIÓN========================================================
+
 @app.route('/devolucion')
+@login_required
 def devolucion():
-    return render_template('devolucion.html')   #prueba mientras se verifica la parte del dashboard     
+    return render_template('devolucion.html')   #prueba mientras se verifica la parte del dashboard 
+
+@app.route('/api/registrar_devolucion', methods=['POST'])
+@login_required
+def registrar_devolucion():
+    data = request.get_json()
+    if not data or 'id_venta' not in data:
+        return jsonify({'success': False, 'message': 'El ID de la venta es obligatorio.'}), 400
+
+    id_venta = data['id_venta']
+    productos = data.get('productos', [])
+    reintegrar_stock = bool(int(data.get('reintegrar_stock', 0)))
+    metodo_reembolso = int(data.get('metodo_reembolso'))
+    observaciones = data.get('observaciones', '').strip()
+    id_usuario = session.get('user_id')
+
+    if not productos:
+        return jsonify({'success': False, 'message': 'No se seleccionaron productos para devolver.'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # 1. Actualizar stock si toca reintegrar
+        if reintegrar_stock:
+            for p in productos:
+                cur.execute(
+                    'UPDATE "Product" SET "Quanty" = "Quanty" + %s WHERE "ID_Product" = %s;',
+                    (p['cantidad'], p['id_producto'])
+                )
+
+        # 2. Calcular total a devolver
+        total_devolver = sum(float(p['precio']) * int(p['cantidad']) for p in productos)
+
+        # 3. Registrar en Return
+        fecha_hora_actual = datetime.now()
+        cur.execute(
+            '''INSERT INTO "Return" ("ID_Sale","Date_Return","Total_Refund","ID_User","ID_Payment_Method","Observations")
+               VALUES (%s, %s, %s, %s, %s, %s) RETURNING "ID_Return";''',
+            (id_venta, fecha_hora_actual, total_devolver, id_usuario, metodo_reembolso, observaciones)
+        )
+        id_return = cur.fetchone()[0]
+
+        # 4. Registrar cada producto en Return_Details
+        for p in productos:
+            cur.execute(
+                '''INSERT INTO "Return_Details" ("ID_Return","ID_Product","Quanty","Price")
+                   VALUES (%s, %s, %s, %s);''',
+                (id_return, p['id_producto'], p['cantidad'], p['precio'])
+            )
+
+        # 5. Registrar egreso en caja según el método de reembolso
+        cur.execute('SELECT "Current_Effective" FROM "Cash" ORDER BY "ID_Cash" DESC LIMIT 1;')
+        row = cur.fetchone()
+        saldo_actual = float(row[0]) if row else 0.0
+
+        if metodo_reembolso == 1:  # Efectivo
+            nuevo_saldo = saldo_actual - total_devolver
+            monto = -total_devolver  # Monto negativo para reflejar el egreso
+        else:  # Tarjeta o transferencia
+            nuevo_saldo = saldo_actual  # El saldo no cambia
+            monto = 0  # No afecta el efectivo
+
+        cur.execute(
+            '''INSERT INTO "Cash" ("Date","Amount","Current_Effective","ID_Transaction_Type","ID_User","ID_Sale","ID_Payment_Method")
+               VALUES (CURRENT_TIMESTAMP, %s, %s, 2, %s, %s, %s);''',
+            (monto, nuevo_saldo, id_usuario, id_venta, metodo_reembolso)
+        )
+
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Devolución registrada correctamente.'})
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': f'Error al procesar la devolución: {e}'}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/api/buscar_venta')
+@login_required
+def buscar_venta():
+    buscar = request.args.get('buscar')
+    fecha = request.args.get('fecha')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        if buscar:  # Buscar por ID de venta
+            cur.execute('SELECT "ID_Sale","Date","Total_Amount" FROM "Sale" WHERE "ID_Sale" = %s;', (buscar,))
+            venta = cur.fetchone()
+            if not venta:
+                return jsonify({'success': False, 'message': 'Venta no encontrada.'}), 404
+
+            venta_data = {
+                'id_sale': venta[0],
+                'date': venta[1].strftime('%Y-%m-%d %H:%M:%S'),  # Incluye fecha y hora
+                'total_amount': float(venta[2])
+            }
+
+            # Traer detalle de venta
+            cur.execute(
+                '''SELECT sd."ID_Product", p."Name", sd."Quanty", (sd."Subtotal"/sd."Quanty") AS unit_price
+                   FROM "Sale_Details" sd
+                   JOIN "Product" p ON sd."ID_Product" = p."ID_Product"
+                   WHERE sd."ID_Sale" = %s;''',
+                (venta[0],)
+            )
+            productos = cur.fetchall()
+            venta_data['productos'] = [
+                {'id': r[0], 'name': r[1], 'quantity': r[2], 'precio': float(r[3])}
+                for r in productos
+            ]
+
+            # Traer devoluciones
+            cur.execute(
+                '''SELECT r."ID_Return", r."Date_Return", r."Total_Refund", r."ID_Payment_Method", r."Observations"
+                   FROM "Return" r
+                   WHERE r."ID_Sale" = %s
+                   ORDER BY r."ID_Return";''',
+                (venta[0],)
+            )
+            devoluciones = cur.fetchall()
+            devoluciones_data = []
+            for devolucion in devoluciones:
+                id_ret, date_ret, tot_ref, met_pay, obs = devolucion
+                cur.execute(
+                    '''SELECT rd."ID_Product", rd."Quanty", rd."Price", p."Name"
+                       FROM "Return_Details" rd
+                       JOIN "Product" p ON rd."ID_Product" = p."ID_Product"
+                       WHERE rd."ID_Return" = %s;''',
+                    (id_ret,)
+                )
+                detalles = cur.fetchall()
+                devoluciones_data.append({
+                    'id_return': id_ret,
+                    'date_return': date_ret.strftime('%Y-%m-%d %H:%M:%S'),
+                    'total_refund': float(tot_ref),
+                    'payment_method': met_pay,
+                    'observations': obs,
+                    'productos': [
+                        {'id': d[0], 'name': d[3], 'quantity': d[1], 'price': float(d[2])}
+                        for d in detalles
+                    ]
+                })
+
+            venta_data['devoluciones'] = devoluciones_data
+
+            return jsonify({'success': True, 'venta': venta_data})
+
+        elif fecha:  # Buscar por fecha
+            cur.execute(
+                '''SELECT "ID_Sale", "Date", "Total_Amount"
+                   FROM "Sale"
+                   WHERE DATE("Date") = %s;''',  # Extrae solo la fecha del TIMESTAMP
+                (fecha,)
+            )
+            ventas = cur.fetchall()
+            if not ventas:
+                return jsonify({'success': False, 'message': 'No se encontraron ventas para esta fecha.'}), 404
+
+            ventas_data = [
+                {
+                    'id_sale': v[0],
+                    'date': v[1].strftime('%Y-%m-%d'),
+                    'total_amount': float(v[2])
+                }
+                for v in ventas
+            ]
+            return jsonify({'success': True, 'ventas': ventas_data})
+
+        else:
+            return jsonify({'success': False, 'message': 'Debe proporcionar un ID de venta o una fecha.'}), 400
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+#===========================================FIN RUTAS DEL APARTADO DE DEVOLUCIÓN========================================================
 
 @app.route('/corte')
+@login_required
 def corte():
     return render_template('corte.html')   #prueba mientras se verifica la parte del dashboard     
 
+
+
+#===========================================RUTAS DEL APARTADO DE APARTADO========================================================
+
 @app.route('/apartado')
+@login_required
 def apartado():
-    return render_template('apartado.html')   #prueba mientras se verifica la parte del dashboard     
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
 
+        # Obtener apartados
+        cur.execute('''
+            SELECT l."ID_Layaway", l."Name", l."Last_Name", p."Name" AS product_name, 
+                   l."Due_Date", l."Pending_Amount"
+            FROM "Layaway" l
+            JOIN "Product" p ON l."ID_Product" = p."ID_Product"
+            WHERE l."ID_Status" = 1;
+        ''')
+        apartados = cur.fetchall()
 
+        # Obtener productos
+        cur.execute('''
+            SELECT "ID_Product", "Name" FROM "Product" WHERE "ID_Product_Status" = 1;
+        ''')
+        productos = cur.fetchall()
+
+        return render_template('apartado.html', apartados=apartados, productos=productos)
+    finally:
+        cur.close()
+        conn.close()
+
+#===========================================FIN DE RUTAS DEL APARTADO DE APARTADO========================================================
 
 
 # =========================================FIN DE RUTAS DE PUNTO DE VENTA====================================================
-
-
 
 
 if __name__ == '__main__':

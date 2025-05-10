@@ -1,9 +1,71 @@
 {% extends 'punto_venta.html' %}
 
-{% block title %}Venta{% endblock %}
+{% block page_title %}Venta{% endblock %}
 
-{% block page_title %}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/venta.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-    <h1>VENTA</h1>
+<div class="caption">
+    <h1>Venta</h1>
+</div>
+
+<div class="venta-container">
+    <!-- Buscador de productos -->
+    <div class="buscador-productos">
+        <h2>Buscar Productos</h2>
+        <input type="text" id="buscador" placeholder="Buscar producto...">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Stock</th>
+                    <th>Precio</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-productos">
+                <!-- Los productos se llenarán dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Contenedor de productos seleccionados -->
+    <div class="contenedor-seleccionados">
+        <h2>Productos Seleccionados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                    <th>Total</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="productos-seleccionados">
+                <!-- Los productos seleccionados se llenarán dinámicamente -->
+            </tbody>
+        </table>
+        <div class="total-container">
+            <h3>Total: $<span id="total-venta">0.00</span></h3>
+            <label for="metodo-pago">Método de Pago:</label>
+            <select id="metodo-pago">
+                <option value="1">Efectivo</option>
+                <option value="2">Tarjeta</option>
+                <option value="3">Transferencia</option>
+            </select>
+            <button class="btn-venta" id="registrar-venta">Registrar Venta</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/venta.js') }}"></script>
 {% endblock %}

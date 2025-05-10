@@ -1,0 +1,298 @@
+:root {
+    --background: #F9F9F9;
+    --primary: #3C3C3C;
+    --secondary: #FF6F61;
+    --table-header: #E0E0E0;
+    --button-hover: #FF4C3B;
+    --text-color: #333333;
+}
+
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+}
+
+.home-section {
+    background: var(--background);
+    min-height: 100vh;
+    transition: all 0.5s ease;
+}
+
+/* Título */
+.caption h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin: 1.5rem 0;
+}
+
+/* Contenedor principal */
+.devolucion-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor del buscador */
+.buscador-ventas {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Título del buscador */
+.buscador-ventas h2 {
+    font-size: 1.8rem;
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+/* Selector de tipo de búsqueda */
+.buscador-ventas select {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f9f9f9;
+    color: var(--text-color);
+    transition: border-color 0.3s ease;
+}
+
+.buscador-ventas select:focus {
+    border-color: var(--secondary);
+    outline: none;
+}
+
+/* Campo de entrada */
+.buscador-ventas input[type="text"],
+.buscador-ventas input[type="date"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f9f9f9;
+    color: var(--text-color);
+    transition: border-color 0.3s ease;
+}
+
+.buscador-ventas input[type="text"]:focus,
+.buscador-ventas input[type="date"]:focus {
+    border-color: var(--secondary);
+    outline: none;
+}
+
+/* Botón de búsqueda */
+.buscador-ventas button {
+    padding: 0.8rem 1.5rem;
+    background-color: var(--secondary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 100%;
+    max-width: 400px;
+}
+
+.buscador-ventas button:hover {
+    background-color: var(--button-hover);
+    transform: scale(1.02);
+}
+
+/* Ajuste para dispositivos pequeños */
+@media (max-width: 768px) {
+    .buscador-ventas {
+        padding: 1rem;
+    }
+
+    .buscador-ventas select,
+    .buscador-ventas input[type="text"],
+    .buscador-ventas input[type="date"],
+    .buscador-ventas button {
+        width: 100%;
+    }
+}
+
+/* Tabla de productos */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+table th, table td {
+    padding: 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid var(--table-header);
+}
+
+table th {
+    background-color: var(--table-header);
+    color: var(--primary);
+}
+
+table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Opciones de devolución */
+.opciones-devolucion {
+    margin-top: 2rem;
+}
+
+.opciones-devolucion h3 {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.opciones-devolucion select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+button.btn-devolucion {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--secondary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button.btn-devolucion:hover {
+    background-color: var(--button-hover);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal base */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000; /* Asegura que esté por encima del resto */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Para scroll si el contenido es más grande */
+    background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+    padding: 20px; /* Espaciado interno para evitar que el contenido esté pegado a los bordes */
+}
+
+/* Contenido del modal */
+.modal-content {
+    background-color: #fff;
+    margin: auto; /* Centrado horizontalmente */
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px; /* Limitar el ancho máximo */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-in-out;
+    overflow-y: auto; /* Habilitar scroll si el contenido es muy largo */
+    max-height: 80vh; /* Limitar la altura máxima del modal */
+}
+
+/* Botón de cerrar */
+.close-modal {
+    float: right;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--primary);
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+    color: var(--secondary);
+}
+
+/* Espaciado entre secciones del modal */
+.detalle-devolucion {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid var(--table-header);
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+/* Títulos dentro del modal */
+.detalle-devolucion h3 {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+/* Listas de productos */
+.detalle-devolucion ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-top: 10px;
+}
+
+.detalle-devolucion ul li {
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+/* Espaciado entre párrafos */
+.detalle-devolucion p {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+/* Mejorar el título del modal */
+.modal-content h2 {
+    text-align: center;
+    font-size: 1.8rem;
+    color: var(--primary);
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--table-header);
+    padding-bottom: 10px;
+}
+
+/* Animación (opcional) */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#buscar-venta,
+#buscar-fecha {
+    display: none; /* Por defecto, ocultar ambos */
+}

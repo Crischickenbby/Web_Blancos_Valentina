@@ -1,9 +1,88 @@
 {% extends 'punto_venta.html' %}
 
-{% block title %}Delocion{% endblock %}
+{% block title %}Devolución{% endblock %}
+{% block page_title %}Devolución{% endblock %}
 
-{% block page_title %}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/devolucion.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-    <H1>DEVOLUCION</H1>
+<div class="caption">
+    <h1>Devolución</h1>
+</div>
+
+<div class="devolucion-container">
+    <!-- Buscador de ventas -->
+    <div class="buscador-ventas">
+        <h2>Buscar Venta</h2>
+        <select id="tipo-busqueda">
+            <option value="id">Buscar por ID</option>
+            <option value="fecha">Buscar por Fecha</option>
+        </select>
+        <input type="text" id="buscar-venta" placeholder="Ingresa el ID de la venta...">
+        <input type="date" id="buscar-fecha" style="display: none;">
+        <button id="btn-buscar-venta">Buscar</button>
+    </div>
+
+    <!-- Información de la venta -->
+    <div class="info-venta" id="info-venta" style="display: none;">
+        <h2>Información de la Venta</h2>
+        <p><strong>ID Venta:</strong> <span id="venta-id"></span></p>
+        <p><strong>Fecha:</strong> <span id="venta-fecha"></span></p>
+        <p><strong>Total:</strong> <span id="venta-total"></span></p>
+        <div id="mensaje-devolucion"></div> <!-- Aquí se muestra si ya tiene devolución -->
+
+        <h3>Productos Vendidos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad Vendida</th>
+                    <th>Precio</th>
+                    <th>Seleccionar Devolver</th>
+                    <th>Cantidad a Devolver</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-productos-venta"></tbody>
+        </table>
+
+        <div class="opciones-devolucion">
+            <h3>¿Reintegrar productos al almacén?</h3>
+            <select id="reintegrar-stock">
+                <option value="1">Sí, agregar de nuevo</option>
+                <option value="0">No, producto fallado</option>
+            </select>
+
+            <h3>Método de reembolso</h3>
+            <select id="metodo-reembolso">
+                <option value="1">Efectivo</option>
+                <option value="2">Tarjeta</option>
+                <option value="3">Transferencia</option>
+            </select>
+
+            <h3>Observaciones de la devolución</h3>
+            <textarea id="observaciones" placeholder="Escribe alguna observación..."></textarea>
+
+            <button class="btn-devolucion" id="confirmar-devolucion">Confirmar Devolución</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de detalles de devolución -->
+<div id="modal-devolucion" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal" id="cerrar-modal">&times;</span>
+        <h2>Detalles de la Devolución</h2>
+        <div id="detalle-devolucion-content">
+            <!-- Aquí se insertan los detalles dinámicamente -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/devolucion.js') }}"></script>
 {% endblock %}

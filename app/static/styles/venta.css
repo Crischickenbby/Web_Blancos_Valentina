@@ -1,0 +1,168 @@
+:root {
+    --background: #E5E0DB;
+    --table-background: #D2AB90;
+    --primary: #3C2F2F;
+    --text-color: #4A3E3E;
+    --th-background: #E5E0DB;
+    --secondary: #C93600;
+}
+
+/* General */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    background: var(--background);
+    color: var(--text-color);
+    overflow-x: hidden;
+}
+
+.venta-container {
+    display: flex;
+    justify-content: space-around;
+    padding: 2rem;
+    gap: 2rem;
+}
+
+.tabla-productos, .formulario-venta {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 45%;
+}
+
+h2 {
+    text-align: center;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+table th, table td {
+    padding: 0.8rem;
+    text-align: center;
+    border: 1px solid var(--primary);
+}
+
+table th {
+    background: var(--th-background);
+    color: var(--primary);
+}
+
+table td {
+    background: var(--table-background);
+    color: var(--text-color);
+}
+
+.btn-agregar {
+    background: var(--secondary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-agregar:hover {
+    background: darkred;
+}
+
+form label {
+    display: block;
+    margin: 0.5rem 0 0.2rem;
+    font-weight: bold;
+}
+
+form input, form select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+}
+
+.btn-venta {
+    background: var(--secondary);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.btn-venta:hover {
+    background: darkred;
+}
+
+.home-section {
+    background: var(--background);
+    min-height: 100vh;
+    transition: all 0.5s ease;
+}
+
+/* Título */
+.caption h1 {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--primary);
+    margin: 2rem 0 1.5rem;
+    text-shadow: 2px 2px 4px rgba(114, 92, 58, 0.4);
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.buscador-productos input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+}
+
+.contenedor-seleccionados {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 45%;
+}
+
+.total-container {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.total-container h3 {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.total-container .btn-venta {
+    margin-top: 1rem;
+    background: var(--secondary);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.total-container .btn-venta:hover {
+    background: darkred;
+}
