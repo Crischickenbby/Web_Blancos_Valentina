@@ -3,7 +3,7 @@
 {% block title %}Apartados{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/apartado.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/apartado.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 {% endblock %}
@@ -13,87 +13,75 @@
     <h1>Apartados</h1>
 </div>
 
-<div class="Buttons">
-    <button id="addLayawayBtn" class="custom-button1">Añadir Apartado</button>
-    <button id="deleteLayawayBtn" class="custom-button2">Eliminar Apartado</button>
-    <button id="managePaymentsBtn" class="custom-button3">Gestionar Pagos</button>
-    <div class="inputGroup">
-        <input type="text" id="searchTable" required autocomplete="off">
-        <label for="searchTable">Buscar</label>
-    </div>
+<div class="apartado-header">
+    <button id="nuevo-apartado">+ Nuevo Apartado</button>
+</div>
+<div class="apartado-buscador">
+    <input type="text" id="buscador-apartado" placeholder="Buscar por nombre o apellido...">
 </div>
 
-<article class="table-widget">
-    <table>
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Producto</th>
-                <th>Fecha de Vencimiento</th>
-                <th>Monto Pendiente</th>
-                <th>Opciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for apartado in apartados %}
-            <tr>
-                <td>{{ apartado.name }}</td>
-                <td>{{ apartado.last_name }}</td>
-                <td>{{ apartado.product_name }}</td>
-                <td>{{ apartado.due_date }}</td>
-                <td>${{ apartado.pending_amount }}</td>
-                <td class="button-container">
-                    <button class="custom-button1 edit-layaway-btn" data-id="{{ apartado.id }}">Editar</button>
-                    <button class="custom-button2 delete-layaway-btn" data-id="{{ apartado.id }}">Eliminar</button>
-                    <button class="custom-button3 manage-payments-btn" data-id="{{ apartado.id }}">Pagos</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</article>
-
-<!-- Modal para añadir apartado -->
-<div id="addLayawayModal" class="modal">
-    <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2>Añadir Apartado</h2>
-        <form id="addLayawayForm">
-            <label for="customer-name">Nombre del Cliente:</label>
-            <input type="text" id="customer-name" name="customerName" required>
-
-            <label for="customer-last-name">Apellido del Cliente:</label>
-            <input type="text" id="customer-last-name" name="customerLastName" required>
-
-            <label for="product-select">Producto:</label>
-            <select id="product-select" name="productId" required>
-                {% for product in productos %}
-                <option value="{{ product.id }}">{{ product.name }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="due-date">Fecha de Vencimiento:</label>
-            <input type="date" id="due-date" name="dueDate" required>
-
-            <label for="pending-amount">Monto Pendiente:</label>
-            <input type="number" id="pending-amount" name="pendingAmount" step="0.01" required>
-
-            <button type="submit" class="custom-button1">Guardar Apartado</button>
-        </form>
-    </div>
+<div class="apartado-lista" id="lista-apartados">
+    {% if apartados %}
+        {% for a in apartados %}
+        <div class="apartado-card" data-nombre="{{ a.name }} {{ a.last_name }}">
+            <h3>{{ a.name }} {{ a.last_name }}</h3>
+            <p><strong>Fecha:</strong> {{ a.date }}</p>
+            <p><strong>Vence:</strong> {{ a.due_date }}</p>
+            <p><strong>Producto:</strong> {{ a.product_name }}</p>
+            <p><strong>Pendiente:</strong> ${{ a.pending_amount }}</p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="sin-apartados">No hay apartados registrados.</p>
+    {% endif %}
 </div>
 
-<!-- Modal para gestionar pagos -->
-<div id="managePaymentsModal" class="modal">
+<!-- Modal para nuevo apartado -->
+<div id="modal-apartado" class="modal">
     <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2>Gestionar Pagos</h2>
-        <form id="managePaymentsForm">
-            <label for="payment-amount">Monto a Pagar:</label>
-            <input type="number" id="payment-amount" name="paymentAmount" step="0.01" required>
+        <span id="cerrar-modal" class="close">&times;</span>
+        <h2>Nuevo Apartado</h2>
+        <form id="form-apartado">
+            <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="apellido">Apellido:</label>
+                <input type="text" id="apellido" required>
+            </div>
+            <div class="form-group">
+                <label for="telefono">Teléfono:</label>
+                <input type="tel" id="telefono" required>
+            </div>
 
-            <button type="submit" class="custom-button1">Registrar Pago</button>
+            <div class="form-group">
+                <label for="buscador-producto">Producto:</label>
+                <div class="producto-selector">
+                    <input type="text" id="buscador-producto" placeholder="Buscar producto...">
+                    <div id="tabla-productos" class="tabla-productos" style="display:none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Categoría</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpo-tabla-productos"></tbody>
+                        </table>
+                    </div>
+                    <div id="producto-seleccionado" class="producto-seleccionado"></div>
+                </div>
+                <input type="hidden" id="id-producto" required>
+            </div>
+
+            <div class="form-group">
+                <label for="monto">Monto a apartar ($):</label>
+                <input type="number" id="monto" min="0" step="0.01" required>
+            </div>
+
+            <button type="submit" class="btn-guardar">Guardar Apartado</button>
         </form>
     </div>
 </div>

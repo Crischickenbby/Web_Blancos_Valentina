@@ -1,35 +1,66 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const addLayawayBtn = document.getElementById('addLayawayBtn');
-    const managePaymentsBtn = document.getElementById('managePaymentsBtn');
-    const addLayawayModal = document.getElementById('addLayawayModal');
-    const managePaymentsModal = document.getElementById('managePaymentsModal');
-    const closeButtons = document.querySelectorAll('.close-button');
+document.addEventListener('DOMContentLoaded', () => {
+    const inputBusqueda = document.getElementById('buscador-producto');
+    const tablaProductos = document.getElementById('tabla-productos');
+    const cuerpoTabla = document.getElementById('cuerpo-tabla-productos');
+    const idProducto = document.getElementById('id-producto');
+    const productoSeleccionado = document.getElementById('producto-seleccionado');
+    const modal = document.getElementById('modal-apartado');
+    const botonAbrir = document.getElementById('nuevo-apartado');
+    const botonCerrar = document.getElementById('cerrar-modal');
 
-    // Abrir modal de añadir apartado
-    addLayawayBtn.addEventListener('click', () => {
-        addLayawayModal.style.display = 'block';
+    // Abrir modal
+    botonAbrir.addEventListener('click', () => {
+        modal.style.display = 'block';
     });
 
-    // Abrir modal de gestionar pagos
-    managePaymentsBtn.addEventListener('click', () => {
-        managePaymentsModal.style.display = 'block';
+    // Cerrar modal
+    botonCerrar.addEventListener('click', () => {
+        modal.style.display = 'none';
     });
 
-    // Cerrar modales
-    closeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            addLayawayModal.style.display = 'none';
-            managePaymentsModal.style.display = 'none';
-        });
-    });
-
-    // Cerrar modal al hacer clic fuera del contenido
-    window.addEventListener('click', (event) => {
-        if (event.target === addLayawayModal) {
-            addLayawayModal.style.display = 'none';
+    // Buscar productos al escribir
+    inputBusqueda.addEventListener('input', () => {
+        const query = inputBusqueda.value.trim();
+        if (query.length === 0) {
+            tablaProductos.style.display = 'none';
+            cuerpoTabla.innerHTML = '';
+            return;
         }
-        if (event.target === managePaymentsModal) {
-            managePaymentsModal.style.display = 'none';
+
+        fetch(`/api/buscar_productos?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                cuerpoTabla.innerHTML = '';
+                if (data.length > 0) {
+                    tablaProductos.style.display = 'block';
+                    data.forEach(producto => {
+                        const fila = document.createElement('tr');
+                        fila.innerHTML = `
+                            <td>${producto.nombre}</td>
+                            <td>${producto.descripcion}</td>
+                            <td>${producto.categoria}</td>
+                        `;
+                        fila.addEventListener('click', () => {
+                            inputBusqueda.value = '';
+                            tablaProductos.style.display = 'none';
+                            productoSeleccionado.textContent = `Seleccionado: ${producto.nombre}`;
+                            idProducto.value = producto.id;
+                        });
+                        cuerpoTabla.appendChild(fila);
+                    });
+                } else {
+                    tablaProductos.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                console.error('Error al buscar productos:', err);
+            });
+    });
+
+    // Cerrar modal si se hace clic fuera del contenido
+    window.addEventListener('click', (e) => {
+        if (e.target == modal) {
+            modal.style.display = 'none';
         }
     });
 });

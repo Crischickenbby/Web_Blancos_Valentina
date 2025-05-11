@@ -915,44 +915,99 @@ def buscar_venta():
 
 #===========================================FIN RUTAS DEL APARTADO DE DEVOLUCIÓN========================================================
 
-@app.route('/corte')
-@login_required
-def corte():
-    return render_template('corte.html')   #prueba mientras se verifica la parte del dashboard     
-
-
-
 #===========================================RUTAS DEL APARTADO DE APARTADO========================================================
 
 @app.route('/apartado')
 @login_required
 def apartado():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        # Solo obtenemos los apartados con el ID_Status igual a 3
+        cur.execute('''SELECT l."ID_Layaway", l."Name", l."Last_Name", l."Phone", l."Date", l."Due_Date", 
+                              l."Pending_Amount", p."Name" AS product_name, s."Status"
+                       FROM "Layaway" l
+                       JOIN "Product" p ON l."ID_Product" = p."ID_Product"
+                       JOIN "Status" s ON l."ID_Status" = s."ID_Status"
+                       WHERE l."ID_Status" = 3
+                       ORDER BY l."Date" DESC;''')
 
-        # Obtener apartados
-        cur.execute('''
-            SELECT l."ID_Layaway", l."Name", l."Last_Name", p."Name" AS product_name, 
-                   l."Due_Date", l."Pending_Amount"
-            FROM "Layaway" l
-            JOIN "Product" p ON l."ID_Product" = p."ID_Product"
-            WHERE l."ID_Status" = 1;
-        ''')
-        apartados = cur.fetchall()
+        resultados = cur.fetchall()
 
-        # Obtener productos
-        cur.execute('''
-            SELECT "ID_Product", "Name" FROM "Product" WHERE "ID_Product_Status" = 1;
-        ''')
-        productos = cur.fetchall()
+        apartados = []
+        for r in resultados:
+            apartados.append({
+                'id_layaway': r[0],
+                'name': r[1],
+                'last_name': r[2],
+                'phone': r[3],
+                'date': r[4].strftime('%Y-%m-%d'),
+                'due_date': r[5].strftime('%Y-%m-%d'),
+                'pending_amount': float(r[6]),
+                'product_name': r[7],
+                'status': r[8]
+            })
 
-        return render_template('apartado.html', apartados=apartados, productos=productos)
+        return render_template('apartado.html', apartados=apartados)
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
     finally:
         cur.close()
         conn.close()
 
+@app.route('/api/buscar_productos')
+def buscar_productos():
+    query = request.args.get('q', '')
+    if query:
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            # Realizamos la consulta en la base de datos
+            cur.execute('''
+                SELECT p."ID_Product", p."Name", p."Description", c."Category"
+                FROM "Product" p
+                JOIN "Category" c ON p."ID_Category" = c."ID_Category"
+                WHERE (p."Name" ILIKE %s OR p."Description" ILIKE %s OR c."Category" ILIKE %s)
+                AND p."ID_Product_Status" = 1
+                ORDER BY p."Name" ASC;
+            ''', (f'%{query}%', f'%{query}%', f'%{query}%'))
+
+            productos = cur.fetchall()
+            productos_lista = []
+
+            for p in productos:
+                productos_lista.append({
+                    'id': p[0],
+                    'nombre': p[1],
+                    'descripcion': p[2],
+                    'categoria': p[3]
+                })
+
+            return jsonify(productos_lista)
+
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+        finally:
+            cur.close()
+            conn.close()
+
+    return jsonify([])  # Si no se pasa un query, devuelve un arreglo vacío.
+
+
 #===========================================FIN DE RUTAS DEL APARTADO DE APARTADO========================================================
+
+#===========================================RUTAS DEL APARTADO DE CORTES========================================================
+
+@app.route('/corte')
+@login_required
+def corte():
+    return render_template('corte.html')   #prueba mientras se verifica la parte del dashboard    
+
+#===========================================FIN DE RUTAS DEL APARTADO DE CORTES========================================================
 
 
 # =========================================FIN DE RUTAS DE PUNTO DE VENTA====================================================

@@ -25,10 +25,18 @@ body {
 /* Título */
 .caption h1 {
     text-align: center;
-    font-size: 2.5rem;
+    font-size: 3rem;
+    font-weight: bold;
     color: var(--primary);
-    margin: 1.5rem 0;
-}
+    margin: 2rem 0 1.5rem;
+    text-shadow: 2px 2px 4px rgba(114, 92, 58, 0.4);
+    animation: fadeIn 1s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
 /* Contenedor principal */
 .devolucion-container {
