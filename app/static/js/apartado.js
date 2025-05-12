@@ -7,7 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('modal-apartado');
     const botonAbrir = document.getElementById('nuevo-apartado');
     const botonCerrar = document.getElementById('cerrar-modal');
-
+    const botonGuardar = document.getElementById('guardar-apartado');
+    const formApartado = document.getElementById('form-apartado');
+    
     // Abrir modal
     botonAbrir.addEventListener('click', () => {
         modal.style.display = 'block';
@@ -62,5 +64,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target == modal) {
             modal.style.display = 'none';
         }
+    });
+
+    // Guardar apartado
+    botonGuardar.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        const nombre = document.getElementById('nombre-cliente').value;
+        const apellido = document.getElementById('apellido-cliente').value;
+        const telefono = document.getElementById('telefono-cliente').value;
+        const idProducto = document.getElementById('id-producto').value;
+        const monto = document.getElementById('monto-inicial').value;
+
+        const datos = {
+            nombre,
+            apellido,
+            telefono,
+            id_producto: idProducto,
+            monto
+        };
+
+        fetch('/api/crear_apartado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Apartado guardado exitosamente');
+                modal.style.display = 'none';
+            } else {
+                alert('Error al guardar el apartado');
+            }
+        })
+        .catch(error => {
+            console.error('Error al guardar apartado:', error);
+            alert('Error al guardar apartado');
+        });
     });
 });

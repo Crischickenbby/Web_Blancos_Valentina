@@ -2,7 +2,7 @@ from flask import Flask, jsonify, render_template, flash, redirect, request, ses
 from config import get_db_connection, SECRET_KEY
 from functools import wraps
 from flask import redirect, url_for
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def login_required(f):
     @wraps(f)
@@ -996,6 +996,45 @@ def buscar_productos():
             conn.close()
 
     return jsonify([])  # Si no se pasa un query, devuelve un arreglo vacío.
+
+
+
+@app.route('/api/crear_apartado', methods=['POST'])
+def crear_apartado():
+    data = request.get_json()
+
+    nombre = data.get('nombre')
+    apellido = data.get('apellido')
+    telefono = data.get('telefono')
+    id_producto = data.get('id_producto')
+    monto = data.get('monto')
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Insertar en Layaway (agregando el campo "Date" con la fecha y hora actual)
+        cur.execute("""
+            INSERT INTO "Layaway" ("Name", "Last_Name", "Phone", "Pending_Amount", "ID_Product", "ID_Status", "ID_User", "Due_Date", "Date")
+            VALUES (%s, %s, %s, %s, %s, 3, 1, NOW() + INTERVAL '15 days', NOW())
+            RETURNING "ID_Layaway"
+        """, (nombre, apellido, telefono, monto, id_producto))
+        id_layaway = cur.fetchone()[0]
+
+        # Insertar primer pago
+        cur.execute("""
+            INSERT INTO "Layaway_Payments" ("ID_Layaway", "Amount_Paid", "Payment_Date")
+            VALUES (%s, %s, NOW())
+        """, (id_layaway, monto))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({'success': True})
+    except Exception as e:
+        print('Error al crear apartado:', e)
+        return jsonify({'success': False, 'message': str(e)})
 
 
 #===========================================FIN DE RUTAS DEL APARTADO DE APARTADO========================================================

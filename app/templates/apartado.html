@@ -14,7 +14,7 @@
 </div>
 
 <div class="apartado-header">
-    <button id="nuevo-apartado">+ Nuevo Apartado</button>
+    <button id="nuevo-apartado">Nuevo Apartado</button>
 </div>
 <div class="apartado-buscador">
     <input type="text" id="buscador-apartado" placeholder="Buscar por nombre o apellido...">
@@ -43,16 +43,16 @@
         <h2>Nuevo Apartado</h2>
         <form id="form-apartado">
             <div class="form-group">
-                <label for="nombre">Nombre:</label>
-                <input type="text" id="nombre" required>
+                <label for="nombre-cliente">Nombre:</label>
+                <input type="text" id="nombre-cliente" required>
             </div>
             <div class="form-group">
-                <label for="apellido">Apellido:</label>
-                <input type="text" id="apellido" required>
+                <label for="apellido-cliente">Apellido:</label>
+                <input type="text" id="apellido-cliente" required>
             </div>
             <div class="form-group">
-                <label for="telefono">Teléfono:</label>
-                <input type="tel" id="telefono" required>
+                <label for="telefono-cliente">Teléfono:</label>
+                <input type="tel" id="telefono-cliente" required>
             </div>
 
             <div class="form-group">
@@ -77,11 +77,12 @@
             </div>
 
             <div class="form-group">
-                <label for="monto">Monto a apartar ($):</label>
-                <input type="number" id="monto" min="0" step="0.01" required>
+                <label for="monto-inicial">Monto a apartar ($):</label>
+                <input type="number" id="monto-inicial" min="0" step="0.01" required>
             </div>
 
-            <button type="submit" class="btn-guardar">Guardar Apartado</button>
+            <button id="guardar-apartado" type="submit">Guardar Apartado</button>
+
         </form>
     </div>
 </div>
