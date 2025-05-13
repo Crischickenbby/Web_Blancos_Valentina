@@ -3,6 +3,7 @@ from config import get_db_connection, SECRET_KEY
 from functools import wraps
 from flask import redirect, url_for
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 def login_required(f):
     @wraps(f)
@@ -820,14 +821,18 @@ def buscar_venta():
     cur = conn.cursor()
     try:
         if buscar:  # Buscar por ID de venta
-            cur.execute('SELECT "ID_Sale","Date","Total_Amount" FROM "Sale" WHERE "ID_Sale" = %s;', (buscar,))
+            cur.execute('''
+                SELECT "ID_Sale", "Date", "Total_Amount" 
+                FROM "Sale" 
+                WHERE "ID_Sale" = %s AND "ID_Sale_Status" = 1;
+            ''', (buscar,))
             venta = cur.fetchone()
             if not venta:
-                return jsonify({'success': False, 'message': 'Venta no encontrada.'}), 404
+                return jsonify({'success': False, 'message': 'Venta no encontrada o no está completada.'}), 404
 
             venta_data = {
                 'id_sale': venta[0],
-                'date': venta[1].strftime('%Y-%m-%d %H:%M:%S'),  # Incluye fecha y hora
+                'date': venta[1].strftime('%Y-%m-%d %H:%M:%S'),
                 'total_amount': float(venta[2])
             }
 
@@ -885,12 +890,12 @@ def buscar_venta():
             cur.execute(
                 '''SELECT "ID_Sale", "Date", "Total_Amount"
                    FROM "Sale"
-                   WHERE DATE("Date") = %s;''',  # Extrae solo la fecha del TIMESTAMP
+                   WHERE DATE("Date") = %s AND "ID_Sale_Status" = 1;''',
                 (fecha,)
             )
             ventas = cur.fetchall()
             if not ventas:
-                return jsonify({'success': False, 'message': 'No se encontraron ventas para esta fecha.'}), 404
+                return jsonify({'success': False, 'message': 'No se encontraron ventas completadas para esta fecha.'}), 404
 
             ventas_data = [
                 {
@@ -924,7 +929,6 @@ def apartado():
     cur = conn.cursor()
 
     try:
-        # Solo obtenemos los apartados con el ID_Status igual a 3
         cur.execute('''SELECT l."ID_Layaway", l."Name", l."Last_Name", l."Phone", l."Date", l."Due_Date", 
                               l."Pending_Amount", p."Name" AS product_name, s."Status"
                        FROM "Layaway" l
@@ -938,7 +942,7 @@ def apartado():
         apartados = []
         for r in resultados:
             apartados.append({
-                'id_layaway': r[0],
+                'id': r[0],
                 'name': r[1],
                 'last_name': r[2],
                 'phone': r[3],
@@ -958,6 +962,7 @@ def apartado():
         cur.close()
         conn.close()
 
+#este apartado es para buscar los productos al momento de crear un apartado 
 @app.route('/api/buscar_productos')
 def buscar_productos():
     query = request.args.get('q', '')
@@ -966,15 +971,12 @@ def buscar_productos():
             conn = get_db_connection()
             cur = conn.cursor()
 
-            # Realizamos la consulta en la base de datos
-            cur.execute('''
-                SELECT p."ID_Product", p."Name", p."Description", c."Category"
-                FROM "Product" p
-                JOIN "Category" c ON p."ID_Category" = c."ID_Category"
-                WHERE (p."Name" ILIKE %s OR p."Description" ILIKE %s OR c."Category" ILIKE %s)
-                AND p."ID_Product_Status" = 1
-                ORDER BY p."Name" ASC;
-            ''', (f'%{query}%', f'%{query}%', f'%{query}%'))
+            cur.execute('''SELECT p."ID_Product", p."Name", p."Description", c."Category"
+                           FROM "Product" p
+                           JOIN "Category" c ON p."ID_Category" = c."ID_Category"
+                           WHERE (p."Name" ILIKE %s OR p."Description" ILIKE %s OR c."Category" ILIKE %s)
+                           AND p."ID_Product_Status" = 1
+                           ORDER BY p."Name" ASC;''', (f'%{query}%', f'%{query}%', f'%{query}%'))
 
             productos = cur.fetchall()
             productos_lista = []
@@ -995,46 +997,357 @@ def buscar_productos():
             cur.close()
             conn.close()
 
-    return jsonify([])  # Si no se pasa un query, devuelve un arreglo vacío.
+    return jsonify([])
 
 
 
+#esto es para darle al boton de crear apartado y guardalo, no mover nada de esto porque ya sirve
 @app.route('/api/crear_apartado', methods=['POST'])
 def crear_apartado():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        nombre = data.get('nombre')
+        apellido = data.get('apellido')
+        telefono = data.get('telefono')
+        id_producto = data.get('id_producto')
+        abono_inicial = Decimal(str(data.get('abono_inicial')))
+        id_metodo_pago = int(data.get('metodo_pago'))  # 1 = efectivo, 2 = transferencia, 3 = tarjeta
+        id_usuario = 1  # Cambiar según el sistema de login
 
-    nombre = data.get('nombre')
-    apellido = data.get('apellido')
-    telefono = data.get('telefono')
-    id_producto = data.get('id_producto')
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # 1. Verificar stock
+        cur.execute('SELECT "Quanty" FROM "Product" WHERE "ID_Product" = %s', (id_producto,))
+        stock_result = cur.fetchone()
+        if not stock_result or stock_result[0] <= 0:
+            return jsonify({'success': False, 'message': 'No hay stock disponible para este producto.'})
+
+        # 2. Obtener precio
+        cur.execute('SELECT "Price" FROM "Product" WHERE "ID_Product" = %s', (id_producto,))
+        precio_result = cur.fetchone()
+        if not precio_result:
+            return jsonify({'success': False, 'message': 'Producto no encontrado.'})
+        precio = precio_result[0]
+
+        if abono_inicial > precio or abono_inicial < 0:
+            return jsonify({'success': False, 'message': 'Monto inicial inválido.'})
+
+        pendiente = precio - abono_inicial
+
+        # 3. Fechas
+        fecha_apartado = datetime.now()
+        fecha_vencimiento = fecha_apartado + timedelta(days=15)
+
+        # 4. Insertar en Layaway
+        cur.execute(''' 
+            INSERT INTO "Layaway" 
+            ("Name", "Last_Name", "Phone", "Date", "Due_Date", "Pending_Amount", "ID_Product", "ID_Status", "ID_User")
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 3, %s)  -- ID_Status 3 (en proceso)
+            RETURNING "ID_Layaway"
+        ''', (nombre, apellido, telefono, fecha_apartado, fecha_vencimiento, pendiente, id_producto, id_usuario))
+        id_layaway = cur.fetchone()[0]
+
+        # 5. Crear la venta con estado 'en proceso' (Sale_Status = 2)
+        cur.execute(''' 
+            INSERT INTO "Sale" ("Date", "Total_Amount", "ID_User", "ID_Sale_Status")
+            VALUES (%s, %s, %s, %s)
+            RETURNING "ID_Sale"
+        ''', (fecha_apartado, precio, id_usuario, 2))  # Sale_Status = 2 (en proceso)
+        id_sale = cur.fetchone()[0]
+
+        # 6. Insertar el detalle de la venta (Sale_Details)
+        cur.execute('''
+            INSERT INTO "Sale_Details" ("Quanty", "Subtotal", "ID_Sale", "ID_Product")
+            VALUES (1, %s, %s, %s)
+        ''', (precio, id_sale, id_producto))
+
+        # 7. Insertar el primer pago en Layaway_Payments
+        cur.execute(''' 
+            INSERT INTO "Layaway_Payments" 
+            ("ID_Layaway", "Amount_Paid", "Payment_Date")
+            VALUES (%s, %s, %s)
+        ''', (id_layaway, abono_inicial, fecha_apartado))
+
+        # 8. Insertar en Layaway_Products con fecha
+        cur.execute(''' 
+            INSERT INTO "Layaway_Products"
+            ("ID_Layaway", "ID_Product", "Quantity", "Date", "ID_Product_Status")
+            VALUES (%s, %s, 1, %s, 4)
+        ''', (id_layaway, id_producto, fecha_apartado))
+
+        # 9. Reducir stock
+        cur.execute(''' 
+            UPDATE "Product"
+            SET "Quanty" = "Quanty" - 1
+            WHERE "ID_Product" = %s
+        ''', (id_producto,))
+
+        # 10. Obtener saldo actual de caja
+        cur.execute('SELECT "Current_Effective" FROM "Cash" ORDER BY "ID_Cash" DESC LIMIT 1')
+        saldo_result = cur.fetchone()
+        saldo_actual = saldo_result[0] if saldo_result else Decimal('0.00')
+
+        # 11. Calcular nuevo saldo si aplica (para efectivo)
+        nuevo_saldo = saldo_actual
+        if id_metodo_pago == 1:  # Efectivo
+            nuevo_saldo += abono_inicial
+
+        # 12. Insertar el movimiento de caja
+        cur.execute(''' 
+            INSERT INTO "Cash"
+            ("Amount", "Current_Effective", "ID_Sale", "ID_Transaction_Type", "ID_Payment_Method", "ID_User", "Date")
+            VALUES (%s, %s, %s, 1, %s, %s, %s)
+        ''', (abono_inicial, nuevo_saldo, id_sale, id_metodo_pago, id_usuario, fecha_apartado))
+
+        # Commit y cierre
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Apartado registrado correctamente.'})
+
+    except Exception as e:
+        print("Error al registrar apartado:", e)
+        return jsonify({'success': False, 'message': f'Error al registrar el apartado: {str(e)}'})
+
+
+
+@app.route('/api/realizar_pago', methods=['POST'])
+def realizar_pago():
+    data = request.get_json()
+    id_layaway = data.get('id_layaway')
     monto = data.get('monto')
+    metodo_pago = int(data.get('metodo_pago'))  # 1 = efectivo, 2 = transferencia, 3 = tarjeta
+    id_usuario = 1  # Ajustar según login
+
+    if not id_layaway or not monto:
+        return jsonify({'success': False, 'message': 'Faltan datos necesarios'}), 400
 
     try:
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Insertar en Layaway (agregando el campo "Date" con la fecha y hora actual)
-        cur.execute("""
-            INSERT INTO "Layaway" ("Name", "Last_Name", "Phone", "Pending_Amount", "ID_Product", "ID_Status", "ID_User", "Due_Date", "Date")
-            VALUES (%s, %s, %s, %s, %s, 3, 1, NOW() + INTERVAL '15 days', NOW())
-            RETURNING "ID_Layaway"
-        """, (nombre, apellido, telefono, monto, id_producto))
-        id_layaway = cur.fetchone()[0]
+        # 1. Obtener el total de pagos previos
+        cur.execute('''
+            SELECT SUM("Amount_Paid") FROM "Layaway_Payments"
+            WHERE "ID_Layaway" = %s
+        ''', (id_layaway,))
+        total_pagado = cur.fetchone()[0] or 0
 
-        # Insertar primer pago
-        cur.execute("""
+        # 2. Obtener el monto original del producto y el usuario
+        cur.execute('''
+            SELECT p."Price", l."ID_User"
+            FROM "Layaway" l
+            JOIN "Layaway_Products" lp ON l."ID_Layaway" = lp."ID_Layaway"
+            JOIN "Product" p ON lp."ID_Product" = p."ID_Product"
+            WHERE l."ID_Layaway" = %s
+        ''', (id_layaway,))
+        resultado = cur.fetchone()
+        if not resultado:
+            return jsonify({'success': False, 'message': 'Apartado no encontrado'}), 404
+        monto_original, id_user_layaway = resultado
+
+        # 3. Calcular nuevo saldo
+        saldo_pendiente = monto_original - total_pagado
+        nuevo_saldo = saldo_pendiente - monto
+
+        fecha_pago = datetime.now()
+
+        # 4. Insertar el nuevo pago
+        cur.execute('''
             INSERT INTO "Layaway_Payments" ("ID_Layaway", "Amount_Paid", "Payment_Date")
-            VALUES (%s, %s, NOW())
-        """, (id_layaway, monto))
+            VALUES (%s, %s, %s)
+        ''', (id_layaway, monto, fecha_pago))
+
+        # 5. Buscar o crear ID_Sale asociado al apartado
+        cur.execute('''
+            SELECT s."ID_Sale"
+            FROM "Sale" s
+            JOIN "Sale_Details" sd ON s."ID_Sale" = sd."ID_Sale"
+            JOIN "Layaway_Products" lp ON sd."ID_Product" = lp."ID_Product"
+            WHERE lp."ID_Layaway" = %s
+            ORDER BY s."ID_Sale" DESC
+            LIMIT 1
+        ''', (id_layaway,))
+        row = cur.fetchone()
+        id_sale = row[0] if row else None
+
+        # Si no existe venta asociada (primer pago), crearla
+        if id_sale is None:
+            cur.execute('''
+                INSERT INTO "Sale" ("Date", "Total_Amount", "ID_User", "ID_Sale_Status")
+                VALUES (%s, %s, %s, %s)
+                RETURNING "ID_Sale"
+            ''', (fecha_pago, monto_original, id_user_layaway, 2))  # 2 = En proceso
+            id_sale = cur.fetchone()[0]
+
+            # Insertar detalle de la venta
+            cur.execute('''
+                INSERT INTO "Sale_Details" ("Quanty", "Subtotal", "ID_Sale", "ID_Product")
+                SELECT 1, p."Price", %s, lp."ID_Product"
+                FROM "Layaway_Products" lp
+                JOIN "Product" p ON lp."ID_Product" = p."ID_Product"
+                WHERE lp."ID_Layaway" = %s
+            ''', (id_sale, id_layaway))
+
+        # 6. Registrar en caja si es efectivo (todos los pagos llevan ID_Sale)
+        if metodo_pago == 1:
+            cur.execute('SELECT "Current_Effective" FROM "Cash" ORDER BY "ID_Cash" DESC LIMIT 1')
+            saldo_result = cur.fetchone()
+            saldo_actual = saldo_result[0] if saldo_result else Decimal('0.00')
+            nuevo_saldo_caja = saldo_actual + Decimal(str(monto))
+
+            cur.execute('''
+                INSERT INTO "Cash"
+                ("Amount", "Current_Effective", "ID_Sale", "ID_Transaction_Type", "ID_Payment_Method", "ID_User", "Date")
+                VALUES (%s, %s, %s, 1, %s, %s, %s)
+            ''', (monto, nuevo_saldo_caja, id_sale, metodo_pago, id_usuario, fecha_pago))
+
+        # 7. Si se completó el pago
+        if nuevo_saldo <= 0:
+            cur.execute('''
+                UPDATE "Layaway"
+                SET "ID_Status" = 1, "Pending_Amount" = 0
+                WHERE "ID_Layaway" = %s
+            ''', (id_layaway,))
+
+            cur.execute('''
+                UPDATE "Layaway_Products"
+                SET "ID_Product_Status" = 2
+                WHERE "ID_Layaway" = %s
+            ''', (id_layaway,))
+
+            cur.execute('''
+                UPDATE "Sale"
+                SET "ID_Sale_Status" = 1
+                WHERE "ID_Sale" = %s
+            ''', (id_sale,))
+
+        else:
+            # 8. Aún hay saldo pendiente
+            cur.execute('''
+                UPDATE "Layaway"
+                SET "Pending_Amount" = %s
+                WHERE "ID_Layaway" = %s
+            ''', (nuevo_saldo, id_layaway))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Pago realizado exitosamente'})
+
+    except Exception as e:
+        print('Error al realizar el pago:', e)
+        return jsonify({'success': False, 'message': 'Error al realizar el pago'}), 500
+
+
+
+
+
+
+
+@app.route('/api/cancelar_apartado', methods=['POST'])
+def cancelar_apartado():
+    data = request.get_json()
+    id_layaway = data.get('id_layaway')
+    id_usuario = 1  # Reemplaza por el ID real del usuario que cancela
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # 1. Obtener el ID_Product e ID_Sale correcto
+        cur.execute('''
+            SELECT lp."ID_Product", s."ID_Sale"
+            FROM "Layaway_Products" lp
+            JOIN "Sale_Details" sd ON lp."ID_Product" = sd."ID_Product"
+            JOIN "Sale" s ON sd."ID_Sale" = s."ID_Sale"
+            WHERE lp."ID_Layaway" = %s
+            AND s."ID_Sale" = (
+                SELECT MAX(s2."ID_Sale")
+                FROM "Sale" s2
+                JOIN "Sale_Details" sd2 ON s2."ID_Sale" = sd2."ID_Sale"
+                WHERE sd2."ID_Product" = lp."ID_Product"
+            )
+            LIMIT 1
+        ''', (id_layaway,))
+        resultado = cur.fetchone()
+        if not resultado:
+            return jsonify({'success': False, 'message': 'No se encontró el producto o venta asociada'}), 404
+
+        id_producto, id_sale = resultado
+
+        # 2. Cambiar estado del producto a disponible
+        cur.execute('''
+            UPDATE "Product"
+            SET "ID_Product_Status" = 1,
+                "Quanty" = "Quanty" + 1  -- ✅ sumamos el stock
+            WHERE "ID_Product" = %s
+        ''', (id_producto,))
+
+        # 3. Cambiar estado del apartado a cancelado
+        cur.execute('''
+            UPDATE "Layaway"
+            SET "ID_Status" = 2
+            WHERE "ID_Layaway" = %s
+        ''', (id_layaway,))
+
+        # 4. Cambiar estado de la venta a cancelado
+        cur.execute('''
+            UPDATE "Sale"
+            SET "ID_Sale_Status" = 3
+            WHERE "ID_Sale" = %s
+        ''', (id_sale,))
+
+        # 5. Borrar relación en Layaway_Products
+        cur.execute('''
+            DELETE FROM "Layaway_Products"
+            WHERE "ID_Layaway" = %s
+        ''', (id_layaway,))
+
+        # 6. Obtener total abonado
+        cur.execute('''
+            SELECT COALESCE(SUM("Amount_Paid"), 0)
+            FROM "Layaway_Payments"
+            WHERE "ID_Layaway" = %s
+        ''', (id_layaway,))
+        total_abonado = cur.fetchone()[0] or 0
+
+        # 7. Obtener el último saldo de efectivo
+        cur.execute('''
+            SELECT "Current_Effective"
+            FROM "Cash"
+            ORDER BY "ID_Cash" DESC
+            LIMIT 1
+        ''')
+        resultado = cur.fetchone()
+        saldo_actual = resultado[0] if resultado else Decimal('0.00')
+
+        nuevo_saldo = saldo_actual - Decimal(str(total_abonado))
+        fecha_cancelacion = datetime.now()
+
+        # 8. Registrar egreso en caja
+        cur.execute('''
+            INSERT INTO "Cash"
+            ("Amount", "Current_Effective", "ID_Sale", "ID_Transaction_Type", "ID_Payment_Method", "ID_User", "Date")
+            VALUES (%s, %s, %s, 2, 1, %s, %s)
+        ''', (total_abonado, nuevo_saldo, id_sale, id_usuario, fecha_cancelacion))
 
         conn.commit()
         cur.close()
         conn.close()
 
         return jsonify({'success': True})
+
     except Exception as e:
-        print('Error al crear apartado:', e)
-        return jsonify({'success': False, 'message': str(e)})
+        print('Error al cancelar apartado:', e)
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+
+
 
 
 #===========================================FIN DE RUTAS DEL APARTADO DE APARTADO========================================================
