@@ -154,8 +154,8 @@ def registrar_venta():
             nuevo_saldo = saldo_actual + total
             monto = total  # Monto positivo para reflejar el ingreso
         else:  # Tarjeta o transferencia
-            nuevo_saldo = saldo_actual  # El saldo no cambia
-            monto = 0  # No afecta el efectivo
+            nuevo_saldo = saldo_actual  # No cambia el saldo efectivo
+            monto = total  # Entra el monto en la tabla Cash, pero no afecta el efectivo en caja
 
         # Insertar en la tabla Cash
         cur.execute(
@@ -175,6 +175,7 @@ def registrar_venta():
     finally:
         cur.close()
         conn.close()
+
 
 @app.route('/api/productos', methods=['GET'])
 @login_required
@@ -1354,10 +1355,106 @@ def cancelar_apartado():
 
 #===========================================RUTAS DEL APARTADO DE CORTES========================================================
 
+
+# Página del corte de caja
 @app.route('/corte')
 @login_required
 def corte():
-    return render_template('corte.html')   #prueba mientras se verifica la parte del dashboard    
+    return render_template('corte.html')
+
+#Para saber si hay una caja abierta o no
+@app.route('/api/caja/estado', methods=['GET'])
+def estado_caja():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Verificar si hay caja abierta (End_DateTime es NULL)
+        cur.execute('''
+            SELECT "ID_Cash_Cut", "Star_DateTime"
+            FROM "Cash_Cut"
+            WHERE "End_DateTime" IS NULL
+            LIMIT 1
+        ''')
+        caja_abierta = cur.fetchone()
+        
+        if caja_abierta:
+            return jsonify({
+                'abierta': True,
+                'id_cash_out': caja_abierta[0],
+                'fecha_apertura': caja_abierta[1].isoformat()
+            })
+        
+        return jsonify({'abierta': False})
+        
+    except Exception as e:
+        print('Error al verificar estado de caja:', e)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+#Para abrir la caja
+@app.route('/api/caja/abrir', methods=['POST'])
+@login_required
+def abrir_caja():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Verificamos si ya hay una caja abierta
+        cur.execute('''
+            SELECT 1 FROM "Cash_Cut" WHERE "End_DateTime" IS NULL
+        ''')
+        if cur.fetchone():
+            return jsonify({'error': 'Ya hay una caja abierta.'}), 400
+
+        # Obtenemos el monto inicial desde el cuerpo del request
+        data = request.get_json()
+        monto_inicial = data.get('monto')
+
+        if monto_inicial is None or monto_inicial < 0:
+            return jsonify({'error': 'Monto inválido.'}), 400
+
+        ahora = datetime.now()
+        id_usuario = 1  # Puedes cambiar esto si estás usando session o current_user
+
+        # Insertar en Cash_Cut
+        cur.execute('''
+            INSERT INTO "Cash_Cut" 
+                ("Expected_Cash", "Counted_Cash", "Difference", "Obvservations", "ID_User", "Star_DateTime", "End_DateTime")
+            VALUES (NULL, NULL, NULL, NULL, %s, %s, NULL)
+            RETURNING "ID_Cash_Cut"
+        ''', (id_usuario, ahora))
+        id_cash_cut = cur.fetchone()[0]
+
+        # Insertar en Cash
+        cur.execute('''
+            INSERT INTO "Cash"
+                ("Amount", "Current_Effective", "ID_Sale", "ID_Transaction_Type", "ID_Payment_Method", "ID_User", "Date")
+            VALUES (%s, %s, NULL, 1, NULL, %s, %s)
+        ''', (monto_inicial, monto_inicial, id_usuario, ahora))
+
+        conn.commit()
+
+        return jsonify({
+            'mensaje': 'Caja abierta correctamente',
+            'id_cash_cut': id_cash_cut,
+            'fecha_apertura': ahora.isoformat()
+        }), 200
+
+    except Exception as e:
+        print('Error al abrir caja:', e)
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+
 
 #===========================================FIN DE RUTAS DEL APARTADO DE CORTES========================================================
 

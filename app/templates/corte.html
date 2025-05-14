@@ -1,9 +1,112 @@
 {% extends 'punto_venta.html' %}
 
-{% block title %}Corte De caja{% endblock %}
+{% block title %}Gestión de Caja{% endblock %}
+{% block page_title %}Gestión de Caja{% endblock %}
 
-{% block page_title %}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/corte.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-    <h1>CORTE DE CAJA</h1>
-{% endblock %}
+<div class="caja-container">
+    <div class="caption">
+        <h1>Gestión de Caja</h1>
+        <div id="estado-caja" class="alert">
+            <i class="fas fa-sync-alt fa-spin"></i> Verificando estado de caja...
+        </div>
+    </div>
+
+    <!-- Sección Abrir Caja -->
+    <div class="caja-section" id="seccion-abrir">
+        <h2><i class="fas fa-cash-register"></i> Abrir Caja</h2>
+        <div class="form-group">
+            <label for="monto-inicial">Monto Inicial:</label>
+            <input type="number" id="monto-inicial" class="form-control" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <button class="btn btn-primary" id="btn-abrir-caja">
+            <i class="fas fa-lock-open"></i> Abrir Caja
+        </button>
+    </div>
+
+    <!-- Sección Corte de Caja -->
+    <div class="caja-section" id="seccion-cerrar">
+        <h2><i class="fas fa-file-invoice-dollar"></i> Corte de Caja</h2>
+
+        <div class="resumen-caja">
+            <div class="resumen-item">
+                <span>Fecha Apertura:</span>
+                <span id="fecha-apertura">--/--/---- --:--</span>
+            </div>
+
+            <!-- División en columnas -->
+            <div class="caja-columns">
+                <!-- Columna 1: Movimientos en Efectivo -->
+                <div class="caja-column">
+                    <h3><i class="fas fa-money-bill-wave"></i> Movimientos en Efectivo</h3>
+                    <div class="resumen-item">
+                        <span>Total Ingresos:</span>
+                        <span id="ingresos-efectivo">$0.00</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Total Egresos:</span>
+                        <span id="egresos-efectivo">$0.00</span>
+                    </div>
+
+
+                    <div class="resumen-item total">
+                        <span>Efectivo Esperado:</span>
+                        <span id="total-efectivo">$0.00</span>
+                    </div>
+
+                </div>
+
+                <!-- Columna 2: Otros Medios de Pago -->
+                <div class="caja-column">
+                    <h3><i class="fas fa-credit-card"></i> Otros Medios de Pago</h3>
+                    <div class="resumen-item">
+                        <span>Tarjetas:</span>
+                        <span id="tarjetas">$0.00</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Transferencias:</span>
+                        <span id="transferencias">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUEVO: Ganancia General -->
+            <div class="resumen-item total">
+                <span>Ganancia General:</span>
+                <span id="ganancia-general">$0.00</span>
+            </div>
+        </div>
+        <!-- Diferencia y Observaciones -->
+
+
+        <div class="form-group">
+            <label for="efectivo-contado"><i class="fas fa-hand-holding-usd"></i> Efectivo Contado:</label>
+            <input type="number" id="efectivo-contado" class="form-control" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="resumen-item diferencia">
+            <span>Diferencia:</span>
+            <span id="diferencia">$0.00</span>
+        </div>
+
+        <div class="form-group">
+            <label for="observaciones"><i class="fas fa-clipboard"></i> Observaciones:</label>
+            <textarea id="observaciones" class="form-control" rows="3"></textarea>
+        </div>
+
+        <button class="btn btn-secondary" id="btn-cerrar-caja">
+            <i class="fas fa-lock"></i> Cerrar Caja
+        </button>
+    </div>
+
+
+    {% endblock %}
+
+    {% block scripts %}
+    <script src="{{ url_for('static', filename='js/corte.js') }}"></script>
+    {% endblock %}

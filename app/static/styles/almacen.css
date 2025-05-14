@@ -1,10 +1,10 @@
 /* Variables CSS */
 :root {
   --background: #E5E0DB; /* Fondo de la página */
-  --table-background: #D2AB90; /* Fondo de la tabla */
+  --table-background: #E5E0DB; /* Fondo de la tabla */
   --primary: #3C2F2F; /* Color del título grande y primera fila */
   --text-color: #4A3E3E; /* Color del texto */
-  --th-background: #E5E0DB; /* Fondo de la primera fila de la tabla */
+  --th-background: #D2AB90; /* Fondo de la primera fila de la tabla */
   --secondary: #C93600; /* Color destacado en interacciones */
 }
 
@@ -28,16 +28,19 @@ body::before {
   background-image: url('../img/foto1.jpg'); /* Ruta de la imagen */
   background-size: cover;
   background-position: center;
-  opacity: 0.2; /* Ajusta la opacidad para que sea apenas visible */
-  z-index: -1; /* Envía el fondo detrás del contenido */
+  
+  z-index: -1;
+  filter: blur(8px); /* Aplica el efecto borroso */
+  pointer-events: none; /* Asegura que no interfiera con clics */
 }
+
 
 /* Título estilizado */
 .caption h1 {
   text-align: center;
   font-size: 3rem;
   font-weight: bold;
-  color: var(--primary);
+  color: var(--background);
   margin-top: 2rem;
   margin-bottom: 1.5rem;
   text-shadow: 2px 2px 4px rgba(114, 92, 58, 0.4);
