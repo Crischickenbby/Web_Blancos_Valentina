@@ -930,6 +930,7 @@ def apartado():
     cur = conn.cursor()
 
     try:
+
         cur.execute('''SELECT l."ID_Layaway", l."Name", l."Last_Name", l."Phone", l."Date", l."Due_Date", 
                               l."Pending_Amount", p."Name" AS product_name, s."Status"
                        FROM "Layaway" l
@@ -976,8 +977,11 @@ def buscar_productos():
                            FROM "Product" p
                            JOIN "Category" c ON p."ID_Category" = c."ID_Category"
                            WHERE (p."Name" ILIKE %s OR p."Description" ILIKE %s OR c."Category" ILIKE %s)
-                           AND p."ID_Product_Status" = 1
+                           AND p."ID_Product_Status" = 1 AND p."Quanty" > 0
                            ORDER BY p."Name" ASC;''', (f'%{query}%', f'%{query}%', f'%{query}%'))
+
+
+
 
             productos = cur.fetchall()
             productos_lista = []
