@@ -34,13 +34,13 @@
     <div class="caja-section" id="seccion-cerrar">
         <h2><i class="fas fa-file-invoice-dollar"></i> Corte de Caja</h2>
 
+        <!-- Este es el bloque donde se actualizan los datos -->
         <div class="resumen-caja">
             <div class="resumen-item">
                 <span>Fecha Apertura:</span>
                 <span id="fecha-apertura">--/--/---- --:--</span>
             </div>
 
-            <!-- División en columnas -->
             <div class="caja-columns">
                 <!-- Columna 1: Movimientos en Efectivo -->
                 <div class="caja-column">
@@ -54,12 +54,10 @@
                         <span id="egresos-efectivo">$0.00</span>
                     </div>
 
-
                     <div class="resumen-item total">
                         <span>Efectivo Esperado:</span>
                         <span id="total-efectivo">$0.00</span>
                     </div>
-
                 </div>
 
                 <!-- Columna 2: Otros Medios de Pago -->
@@ -82,13 +80,12 @@
                 <span id="ganancia-general">$0.00</span>
             </div>
         </div>
-        <!-- Diferencia y Observaciones -->
-
 
         <div class="form-group">
-            <label for="efectivo-contado"><i class="fas fa-hand-holding-usd"></i> Efectivo Contado:</label>
+            <label for="efectivo-contado"><i class="fas fa-hand-holding-usd"></i> Efectivo Contado En Caja:</label>
             <input type="number" id="efectivo-contado" class="form-control" placeholder="0.00" step="0.01" min="0">
         </div>
+
         <div class="resumen-item diferencia">
             <span>Diferencia:</span>
             <span id="diferencia">$0.00</span>
@@ -102,11 +99,11 @@
         <button class="btn btn-secondary" id="btn-cerrar-caja">
             <i class="fas fa-lock"></i> Cerrar Caja
         </button>
-    </div>
 
 
-    {% endblock %}
 
-    {% block scripts %}
-    <script src="{{ url_for('static', filename='js/corte.js') }}"></script>
-    {% endblock %}
+        {% endblock %}
+
+        {% block scripts %}
+        <script src="{{ url_for('static', filename='js/corte.js') }}"></script>
+        {% endblock %}

@@ -1433,12 +1433,13 @@ def abrir_caja():
         cur.execute('''
             INSERT INTO "Cash"
                 ("Amount", "Current_Effective", "ID_Sale", "ID_Transaction_Type", "ID_Payment_Method", "ID_User", "Date")
-            VALUES (%s, %s, NULL, 1, NULL, %s, %s)
+            VALUES (%s, %s, NULL, 1, 1, %s, %s)
         ''', (monto_inicial, monto_inicial, id_usuario, ahora))
 
         conn.commit()
 
         return jsonify({
+            'success': True,
             'mensaje': 'Caja abierta correctamente',
             'id_cash_cut': id_cash_cut,
             'fecha_apertura': ahora.isoformat()
@@ -1452,8 +1453,191 @@ def abrir_caja():
         cur.close()
         conn.close()
 
+@app.route('/api/caja/cerrar', methods=['POST'])
+def cerrar_caja():
+    data = request.json
+    efectivo_contado = data.get('efectivo_contado')
+    diferencia = data.get('diferencia')
+    observaciones = data.get('observaciones', '')
 
+    conn = get_db_connection()
+    cur = conn.cursor()
 
+    try:
+        # Ingresos en efectivo
+        cur.execute("""
+            SELECT COALESCE(SUM("Amount"), 0) 
+            FROM "Cash" 
+            WHERE "ID_Transaction_Type" = 1 AND "ID_Payment_Method" = 1
+        """)
+        ingresos_efectivo = cur.fetchone()[0]
+
+        # Egresos en efectivo
+        cur.execute("""
+            SELECT COALESCE(SUM("Amount"), 0) 
+            FROM "Cash" 
+            WHERE "ID_Transaction_Type" = 2 AND "ID_Payment_Method" = 1
+        """)
+        egresos_efectivo = cur.fetchone()[0]
+
+        # Ganancia general = todos los ingresos - todos los egresos
+        cur.execute("""
+            SELECT 
+                COALESCE(SUM(CASE WHEN "ID_Transaction_Type" = 1 THEN "Amount" ELSE 0 END), 0) -
+                COALESCE(SUM(CASE WHEN "ID_Transaction_Type" = 2 THEN "Amount" ELSE 0 END), 0)
+            FROM "Cash"
+        """)
+        ganancia_general = cur.fetchone()[0]
+
+        # Efectivo esperado
+        efectivo_esperado = ingresos_efectivo - egresos_efectivo
+
+        # Buscar el corte activo
+        cur.execute("""
+            SELECT "ID_Cash_Cut"
+            FROM "Cash_Cut"
+            WHERE "End_DateTime" IS NULL
+            ORDER BY "Star_DateTime" DESC
+            LIMIT 1
+        """)
+        result = cur.fetchone()
+        if not result:
+            return jsonify({"error": "No hay caja abierta"}), 400
+
+        id_corte = result[0]
+
+        # Actualizar el corte
+        cur.execute("""
+            UPDATE "Cash_Cut"
+            SET 
+                "Expected_Cash" = %s,
+                "Counted_Cash" = %s,
+                "Difference" = %s,
+                "Obvservations" = %s,
+                "End_DateTime" = %s
+            WHERE "ID_Cash_Cut" = %s
+        """, (
+            efectivo_esperado,
+            efectivo_contado,
+            diferencia,
+            observaciones,
+            datetime.now(),
+            id_corte
+        ))
+
+        conn.commit()
+        return jsonify({
+            "message": "Caja cerrada correctamente",
+            "efectivo_esperado": efectivo_esperado,
+            "ganancia_general": ganancia_general
+        }), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/caja/datos-corte', methods=['GET'])
+@login_required
+def obtener_datos_corte():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Primero obtenemos la fecha de apertura del corte actual
+        cur.execute('''
+            SELECT "Star_DateTime" FROM "Cash_Cut" 
+            WHERE "End_DateTime" IS NULL 
+            LIMIT 1
+        ''')
+        corte_actual = cur.fetchone()
+        
+        if not corte_actual:
+            return jsonify({'error': 'No hay caja abierta'}), 400
+
+        fecha_apertura = corte_actual[0]
+
+        # Consultas modificadas para filtrar por fecha de apertura
+        # Ingresos en efectivo (ID_Payment_Method = 1 es efectivo, ID_Transaction_Type = 1 es ingreso)
+        cur.execute('''
+            SELECT COALESCE(SUM("Amount"), 0) FROM "Cash" 
+            WHERE "ID_Transaction_Type" = 1 
+            AND "ID_Payment_Method" = 1
+            AND "Date" >= %s
+        ''', (fecha_apertura,))
+        ingresos_efectivo = cur.fetchone()[0]
+
+        # Egresos en efectivo
+        cur.execute('''
+            SELECT COALESCE(SUM("Amount"), 0) FROM "Cash" 
+            WHERE "ID_Transaction_Type" = 2 
+            AND "ID_Payment_Method" = 1
+            AND "Date" >= %s
+        ''', (fecha_apertura,))
+        egresos_efectivo = cur.fetchone()[0]
+
+        # Ingresos por tarjetas
+        cur.execute('''
+            SELECT COALESCE(SUM("Amount"), 0) FROM "Cash" 
+            WHERE "ID_Payment_Method" = 2 
+            AND "ID_Transaction_Type" = 1
+            AND "Date" >= %s
+        ''', (fecha_apertura,))
+        tarjetas = cur.fetchone()[0]
+
+        # Ingresos por transferencias
+        cur.execute('''
+            SELECT COALESCE(SUM("Amount"), 0) FROM "Cash" 
+            WHERE "ID_Payment_Method" = 3 
+            AND "ID_Transaction_Type" = 1
+            AND "Date" >= %s
+        ''', (fecha_apertura,))
+        transferencias = cur.fetchone()[0]
+
+        # Egresos por transferencias
+        cur.execute('''
+            SELECT COALESCE(SUM("Amount"), 0) FROM "Cash" 
+            WHERE "ID_Payment_Method" = 3 
+            AND "ID_Transaction_Type" = 2
+            AND "Date" >= %s
+        ''', (fecha_apertura,))
+        transferencias_egreso = cur.fetchone()[0]
+
+        # Egresos por tarjetas
+        cur.execute('''
+            SELECT COALESCE(SUM("Amount"), 0) FROM "Cash" 
+            WHERE "ID_Payment_Method" = 2 
+            AND "ID_Transaction_Type" = 2
+            AND "Date" >= %s
+        ''', (fecha_apertura,))
+        tarjeta_egreso = cur.fetchone()[0]
+
+        # Cálculos finales
+        egreso_total = egresos_efectivo + transferencias_egreso + tarjeta_egreso
+        ganancia_general = (ingresos_efectivo + transferencias + tarjetas) - egreso_total
+        total_efectivo = ingresos_efectivo - egresos_efectivo
+
+        return jsonify({
+            'success': True,
+            'ingresos_efectivo': float(ingresos_efectivo),
+            'egresos_efectivo': float(egresos_efectivo),
+            'total_efectivo': float(total_efectivo),
+            'tarjetas': float(tarjetas),
+            'transferencias': float(transferencias),
+            'ganancia_general': float(ganancia_general),
+            'diferencia': float(total_efectivo - (ingresos_efectivo + tarjetas + transferencias - egreso_total)),
+            'fecha_apertura': fecha_apertura.isoformat()  # Para referencia en el frontend
+        })
+
+    except Exception as e:
+        print(f'Error: {e}')
+        return jsonify({'error': 'Error al obtener los datos de corte', 'detalle': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
 
 
 #===========================================FIN DE RUTAS DEL APARTADO DE CORTES========================================================
