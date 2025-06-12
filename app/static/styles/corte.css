@@ -9,19 +9,40 @@
     --warning: #FFC107;
 }
 
-/* General */
 body {
-    font-family: 'Poppins', sans-serif;
-    background-color: var(--background);
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  background: var(--background);
+  color: var(--text-color);
+  overflow-x: hidden;
+  position: relative;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../img/foto1.jpg'); /* Ruta de la imagen */
+  background-size: cover;
+  background-position: center;
+  
+  z-index: -1;
+  filter: blur(8px); /* Aplica el efecto borroso */
+  pointer-events: none; /* Asegura que no interfiera con clics */
+}
+
+
 .home-section {
-    background: var(--background);
-    min-height: 100vh;
-    transition: all 0.5s ease;
+  position: relative;
+  background: url();
+  min-height: 100vh;
+  top: 0;
+  left: 78px;
+  width: calc(100% - 78px);
+  transition: all 0.5s ease;
 }
 
 .caja-container {
@@ -34,7 +55,7 @@ body {
     text-align: center;
     font-size: 3rem;
     font-weight: bold;
-    color: var(--primary);
+    color: var(--background);
     margin: 2rem 0 1.5rem;
     text-shadow: 2px 2px 4px rgba(114, 92, 58, 0.4);
     animation: fadeIn 1s ease-in-out;

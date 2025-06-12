@@ -10,21 +10,18 @@
 </head>
 
 <body>
+  <!-- NAVBAR -->
   <nav class="custom-navbar">
     <div class="navbar-container">
       <a href="#" class="navbar-logo">
         <img src="{{ url_for('static', filename='img/image.png') }}" alt="Logo" class="logo-img" />
         Blancos Valentina
       </a>
-
-      <button class="navbar-toggle" id="toggleBtn">
-        ☰
-      </button>
-
+      <button class="navbar-toggle" id="toggleBtn">☰</button>
       <div class="navbar-links" id="navbarLinks">
         <a href="#">Inicio</a>
         <a href="{{ url_for('sesion') }}">Perfil</a>
-        <a href="#">Información</a>
+        <!--<a href="#">Información</a>-->
         <div class="search-group">
           <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
             <path
@@ -36,21 +33,42 @@
       </div>
     </div>
   </nav>
+  
 
-  <!-- Carrusel de imágenes -->
+  <!-- CAROUSEL -->
   <div class="carousel" id="carousel">
+    <div class="carousel-text">¡Bienvenido!</div>
+
     <img src="{{ url_for('static', filename='img/foto1.jpg') }}" alt="Imagen 1" class="active" />
     <img src="{{ url_for('static', filename='img/foto2.jpg') }}" alt="Imagen 2" />
     <img src="{{ url_for('static', filename='img/foto3.jpg') }}" alt="Imagen 3" />
   </div>
 
+  <!-- PRODUCTOS POR CATEGORÍA -->
+  <div class="categorias">
+    {% for categoria, productos in categorias.items() %}
+      <div class="categoria">
+        <h2>{{ categoria }}</h2>
+        <div class="productos">
+          {% for producto in productos %}
+            <div class="producto">
+              <img src="{{ url_for('static', filename='img/prod.png') }}" alt="Producto">
+              <h3>{{ producto.name }}</h3>
+              <p>{{ producto.description }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
   <script>
-    // Lógica para el menú de navegación
+    // Navbar toggle
     document.getElementById("toggleBtn").addEventListener("click", () => {
       document.getElementById("navbarLinks").classList.toggle("active");
     });
 
-    // Lógica para el carrusel
+    // Carrusel automático
     const images = document.querySelectorAll("#carousel img");
     let currentIndex = 0;
 
@@ -58,7 +76,7 @@
       images[currentIndex].classList.remove("active");
       currentIndex = (currentIndex + 1) % images.length;
       images[currentIndex].classList.add("active");
-    }, 3000); // Cambia cada 3 segundos
+    }, 3000);
   </script>
 </body>
 

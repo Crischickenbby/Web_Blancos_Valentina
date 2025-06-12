@@ -1,22 +1,24 @@
 /* Fuente general */
 body {
-  background-color: #E5E0DB;
+  background-color: #F4F1EC;
   font-family: 'Poppins', sans-serif;
   margin: 0;
   padding: 0;
+  color: #333;
+  line-height: 1.6;
 }
 
-/* Navbar general */
+/* Navbar */
 .custom-navbar {
-  background-color: #D2AB90;
-  box-shadow: 0px 2px 5px #725C4B;
-  padding: 18px 30px; /* Aumenté un poco el padding */
+  background-color: #D5A68D;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px 30px;
   position: sticky;
   top: 0;
   z-index: 100;
+  border-bottom: 2px solid #C2A48A;
 }
 
-/* Contenedor */
 .navbar-container {
   max-width: 1200px;
   margin: auto;
@@ -26,42 +28,43 @@ body {
   flex-wrap: wrap;
 }
 
-/* Logo */
 .navbar-logo {
   display: flex;
   align-items: center;
-  font-size: 20px; /* Más grande */
+  font-size: 22px;
   text-decoration: none;
   color: #3C2F2F;
+  font-weight: 600;
 }
 
 .logo-img {
   width: 40px;
   height: 32px;
   margin-right: 12px;
-  border-radius: 4px;
+  border-radius: 5px;
   box-shadow: 0px 2px 5px #3C2F2F;
-  padding: 3px;
+  padding: 5px;
 }
 
 /* Links */
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 24px;
 }
 
 .navbar-links a {
   text-decoration: none;
   color: #3C2F2F;
-  padding: 10px 15px;
-  font-size: 17px;
-  border-radius: 6px;
-  transition: background-color 0.3s;
+  padding: 12px 20px;
+  font-size: 18px;
+  border-radius: 8px;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .navbar-links a:hover {
   background-color: #E5E0DB;
+  transform: scale(1.05);
 }
 
 /* Buscador */
@@ -72,28 +75,28 @@ body {
 }
 
 .search-input {
-  height: 40px;
+  height: 45px;
   padding-left: 2.5rem;
   border-radius: 8px;
   border: 2px solid transparent;
-  background-color: #E5E0DB;
+  background-color: #F9F4F1;
   transition: 0.3s ease;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .search-input:focus,
 .search-input:hover {
   outline: none;
   border-color: #725C4B;
-  background-color: #E5E0DB;
+  background-color: #F9F4F1;
   box-shadow: 0 0 0 1px #3C2F2F;
 }
 
 .icon {
   position: absolute;
   left: 12px;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   fill: #3C2F2F;
 }
 
@@ -125,33 +128,109 @@ body {
 
   .navbar-links a {
     width: 100%;
-    text-align: auto;
+    text-align: left;
   }
 
   .search-group {
-    justify-content: auto;
     width: 100%;
     margin-top: 10px;
   }
 }
 
-/* Estilos para el carrusel */
 .carousel {
   position: relative;
   width: 100%;
-  max-height: 400px;
+  height: 870px;
   overflow: hidden;
+  background: linear-gradient(to bottom right, #f6ebe3, #f3d3c1); /* Opcional */
 }
 
 .carousel img {
-  width: 100%;
-  height: auto;
-  display: none;
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  z-index: 0;
+  transition: opacity 1s ease-in-out;
 }
 
 .carousel img.active {
-  display: block;
+  opacity: 1;
+  z-index: 1;
+}
+
+
+/* Productos */
+.productos-container {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.categoria {
+  margin-bottom: 40px;
+  width: 100%;
+}
+
+.categoria h2 {
+  color: #c56a6a;
+  border-bottom: 2px solid #e4bfbf;
+  padding-bottom: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.productos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center; /* Centra los productos */
+}
+
+.producto-card {
+  background: #fff;
+  border: 1px solid #e0dcdc;
+  border-radius: 10px;
+  width: 200px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s;
+}
+
+.producto-card:hover {
+  transform: translateY(-5px);
+}
+
+.producto-card img {
+  width: 100%; /* Ajusta la imagen al 100% del contenedor */
+  height: 150px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.producto-card h3 {
+  font-size: 1.1em;
+  margin: 10px 0 5px;
+}
+
+.producto-card p {
+  font-size: 0.9em;
+  color: #666;
+}
+.carousel-text {
+  position: absolute;
+  top: 40%;
+  width: 100%;
+  text-align: center;
+  font-size: 60px;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+  z-index: 2;
+  pointer-events: none;
 }

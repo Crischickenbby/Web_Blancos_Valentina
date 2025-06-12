@@ -1,17 +1,10 @@
 from flask import Flask, jsonify, render_template, flash, redirect, request, session
 from config import get_db_connection, SECRET_KEY
-from functools import wraps
+from functools import wraps #esto es para el decorador(un decorador es una función que toma otra función como argumento y devuelve una nueva función)
 from flask import redirect, url_for
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('sesion'))  # Redirige al formulario de inicio de sesión
-        return f(*args, **kwargs)
-    return decorated_function
 
 # Inicializa la aplicación Flask
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static', )
@@ -19,99 +12,193 @@ app = Flask(__name__, template_folder='app/templates', static_folder='app/static
 # Configura la clave secreta desde config.py
 app.secret_key = SECRET_KEY
 
+def login_required(roles=None):
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if 'user_id' not in session:
+                flash("Debes iniciar sesión primero.", "error") 
+                print("🚫 Acceso denegado. Usuario no autenticado.")
+                return redirect(url_for('sesion'))
+            
+            # Verifica el rol si se proporcionó
+            if roles:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute('SELECT "ID_Rol" FROM "User" WHERE "ID_User" = %s;', (session['user_id'],))
+                result = cur.fetchone()
+                cur.close()
+                conn.close()
+
+                if not result or result[0] not in roles:
+                    flash("No tienes permiso para acceder a esta página.", "error")
+                    print("🚫 Acceso denegado. Rol no permitido.")
+                    return redirect(url_for('home'))
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
+
 
 #=====================================RUTAS DE LA SECCION PRINCIPAL(INDEX)=====================================
-@app.route('/')
+
+@app.route('/')#Esta ruta es la principla, donde no tiene que estar regsitrado para poder ver los productos la gente
 def home():
     try:
-        # Intenta obtener la conexión
+        # Verifica la conexión a la base de datos primero
         conn = get_db_connection()
-        
-        # Crea un cursor para realizar una consulta
         cur = conn.cursor()
+        cur.execute('SELECT 1')  # Consulta de prueba
+        test = cur.fetchone()
+        print("✅ Test DB connection:", test)
         
-        # Ejecuta una consulta simple para verificar la conexión
-        cur.execute('SELECT 1;')
-        cur.fetchall()  # Si la consulta es exitosa, devolverá algo
+        # Consulta corregida - cambié c."Name" por c."Category"
+        query = '''
+            SELECT 
+                c."Category" AS Category,
+                p."ID_Product",
+                p."Name" AS Product,
+                p."Price"
+            FROM "Product" p
+            JOIN "Category" c ON p."ID_Category" = c."ID_Category"
+            WHERE p."Quanty" > 0
+        '''
+        cur.execute(query)
+        productos = cur.fetchall()
+        #print("📦 Productos obtenidos:", productos)
         
-        # Cierra el cursor y la conexión
         cur.close()
         conn.close()
         
-        # Mensaje en la terminal
-        print("Conexión exitosa a la base de datos!")
-        return render_template('index.html')  # Solo devuelve un mensaje en texto plano
+        if not productos:
+            return render_template('index.html', 
+                               categorias={},
+                               message="No hay productos disponibles")
+        
+        # Estructura simplificada de datos
+        categorias = {}
+        for row in productos:
+            categoria = row[0]
+            if categoria not in categorias:
+                categorias[categoria] = []
+            categorias[categoria].append({
+                'id': row[1],
+                'name': row[2],
+                'price': row[3],
+                'image': 'default-product.jpg'  # Imagen por defecto
+            })
+            
+        return render_template('index.html', categorias=categorias)
         
     except Exception as e:
-        # Muestra el error en la terminal
-        print(f"Error en la conexión: {e}")
-        return "Error en la conexión"  # Devuelve el mensaje de error en texto plano
-#===============================================================================================================
+        print(f"🔥 Error completo: {str(e)}")
+        return render_template('error.html', 
+                            error="Disculpa, estamos teniendo problemas técnicos. Por favor intenta más tarde."), 500
 
-#=====================================RUTAS DE LA SECCIÓN LOGIN================================================
-# Ruta para manejar el inicio de sesión
-#Ruta de la seccion de sesion
-@app.route('/sesion')
+
+@app.route('/sesion')#Esta ruta es para el inicio de sesión, donde la gente puede registrarse si no tiene cuenta o iniciar sesión si ya tiene cuenta
 def sesion():
     return render_template('sesion.html')
-# Ruta para manejar el proceso de inicio de sesión
+
 @app.route('/login', methods=['POST'])
 def login():
     try:
-        # Obtiene los datos enviados desde el formulario
         email = request.form.get('Email_sesion')
         password = request.form.get('Password_sesion')
-
-        # Intenta conectarse a la base de datos
         conn = get_db_connection()
         cur = conn.cursor()
-
-        # Consulta la base de datos para verificar el usuario y la contraseña
-        query = 'SELECT * FROM "User" WHERE "Email" = %s AND "Password" = %s;'
+        query = '''SELECT * FROM "User" WHERE "Email" = %s AND "Password" = %s;'''
         cur.execute(query, (email, password))
         user = cur.fetchone()
 
-        # Si el usuario es encontrado, inicia sesión
         if user:
-            session['user_id'] = user[0]  # Guarda el ID del usuario en la sesión
-            flash("¡Inicio de sesión exitoso!", "success")
-            return redirect('/punto_venta')  # Redirige a la ruta de punto de venta
+            session['user_id'] = user[0]
+            user_role = user[5]
 
-        # Si no se encuentra el usuario, muestra un mensaje de error
+            if user_role == 3:
+                flash("¡Inicio de sesión exitoso!", "success")
+                return redirect('/')
+            flash("¡Inicio de sesión exitoso!", "success")
+            return redirect('/punto_venta')
         else:
             flash("Correo o contraseña incorrectos.", "error")
-            return redirect('/sesion')  # Redirige al formulario de inicio de sesión nuevamente
+            return redirect('/sesion')
 
     except Exception as e:
-        # Manejo de errores
         print(f"Error al intentar iniciar sesión: {e}")
         flash("Ocurrió un problema al intentar iniciar sesión.", "error")
-        return redirect('/sesion')  # Redirige al formulario de inicio de sesión
-
+        return redirect('/sesion')
     finally:
-        # Cierra la conexión a la base de datos
         if conn:
             cur.close()
             conn.close()
-#===========================================RUTAS DE PUNTO DE VENTA========================================================
-@app.route('/punto_venta')
-@login_required
-def punto_venta():
-    return render_template('punto_venta.html')
 
+@app.route('/add_user', methods=['POST'])#Esta ruta es para hacer el registro en la base de datos del nuevo usuario
+def add_user():
+    try:
+        name = request.form.get('fullname')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        if not name or not last_name or not email or not password:
+            flash("Todos los campos son obligatorios.", "error")
+            return redirect('/sesion')
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        query = '''
+            INSERT INTO "User" ("Name", "Last_Name", "Email", "Password", "ID_Rol", "ID_User_Status")
+            VALUES (%s, %s, %s, %s, 3, 1);
+        '''
+        cur.execute(query, (name, last_name, email, password))
+        conn.commit()
+        flash("Usuario registrado exitosamente. Ahora puedes iniciar sesión.", "success")
+        return redirect('/sesion')
+
+    except Exception as e:
+        print(f"Error al registrar usuario: {e}")
+        flash("Error al registrar usuario.", "error")
+        return redirect('/index')
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+
+@app.route('/punto_venta')#Esta ruta es para el apartado de punto de venta, donde solo pueden entrar los usuarios que tengan el rol 1 o 2(Jefe o empleado)
+@login_required(roles=[1, 2])  # Solo jefe (1) y empleado (2)
+def punto_venta():
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT "Name", "Last_Name", "Email" FROM "User" WHERE "ID_User" = %s;', (user_id,))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if user:
+        user_data = {
+            "name": user[0],
+            "last_name": user[1],
+            "email": user[2]
+        }
+        return render_template('punto_venta.html', user=user_data)
+    else:
+        flash("Usuario no encontrado.", "error")
+        return redirect('/logout')
 
 
 #===========================================RUTA DEL APARTADO DE VENTA========================================================
-@app.route('/venta')
-@login_required
+
+@app.route('/venta')#Esta ruta es para el apartado de venta, donde solo pueden entrar los usuarios que tengan el rol 1 o 2(Jefe o empleado)
 def venta():
     return render_template('venta.html')   #prueba mientras se verifica la parte del dashboard  
 
 
 @app.route('/api/registrar_venta', methods=['POST'])
+
 def registrar_venta():
     data = request.get_json()
-
+    user_id = session['user_id']
     productos = data.get('productos')
     total = data.get('total')
     metodo_pago = data.get('metodo_pago')
@@ -129,7 +216,7 @@ def registrar_venta():
         # Insertar en la tabla Sale
         cur.execute('INSERT INTO "Sale" ("Date", "Total_Amount", "ID_User") '
                     'VALUES (%s, %s, %s) RETURNING "ID_Sale";',
-                    (fecha_hora_actual, total, 1))  # Asumimos user_id = 1
+                    (fecha_hora_actual, total, user_id))  # Asumimos user_id = 1
         result = cur.fetchone()
         print("Resultado de la consulta INSERT:", result)
         id_sale = result[0]
@@ -177,8 +264,7 @@ def registrar_venta():
         conn.close()
 
 
-@app.route('/api/productos', methods=['GET'])
-@login_required
+@app.route('/api/productos', methods=['GET'])# Esta ruta es para obtener los productos disponibles en la base de datos
 def api_productos():
     try:
         conn = get_db_connection()
@@ -202,8 +288,7 @@ def api_productos():
 
 
 #===========================================RUTA DEL APARTADO DE ALMACÉN========================================================
-@app.route('/almacen')
-@login_required
+@app.route('/almacen')# Esta ruta es para el apartado de almacén, donde solo pueden entrar los usuarios que tengan el rol 1 o 2(Jefe o empleado)
 def almacen():
     try:
         conn = get_db_connection()
@@ -251,7 +336,6 @@ def almacen():
 
 
 @app.route('/eliminar_producto/<int:product_id>', methods=['PUT'])
-@login_required
 def eliminar_producto(product_id):
     print(f"Petición recibida para eliminar el producto con ID: {product_id}")  # Depuración
     try:
@@ -278,7 +362,7 @@ def eliminar_producto(product_id):
 
 
 @app.route('/agregar_producto', methods=['POST'])
-@login_required
+
 def agregar_producto():
     try:
         # Obtener datos del formulario
@@ -310,7 +394,7 @@ def agregar_producto():
             conn.close()
 
 @app.route('/incrementar_cantidad_producto', methods=['POST'])
-@login_required
+
 def incrementar_cantidad_producto():
     try:
         data = request.get_json()
@@ -342,7 +426,7 @@ def incrementar_cantidad_producto():
             conn.close()
 
 @app.route('/reducir_cantidad_producto', methods=['POST'])
-@login_required
+#SE REMPLEAZO MIENTRAS
 def reducir_cantidad_producto():
     try:
         data = request.get_json()
@@ -381,7 +465,7 @@ def reducir_cantidad_producto():
             conn.close()
 
 @app.route('/actualizar_producto', methods=['POST'])
-@login_required
+#SE REMPLEAZO MIENTRAS
 def actualizar_producto():
     conn = None
     try:
@@ -424,7 +508,7 @@ def actualizar_producto():
             conn.close()
 
 @app.route('/add_category', methods=['POST'])
-@login_required
+#SE REMPLEAZO MIENTRAS
 def add_category():
     try:
         data = request.get_json()
@@ -464,7 +548,7 @@ def add_category():
             conn.close()
 
 @app.route('/delete_category', methods=['POST'])
-@login_required
+#SE REMPLEAZO MIENTRAS
 def delete_category():
     try:
         data = request.get_json()
@@ -729,12 +813,12 @@ def obtener_empleado(user_id):
 #===========================================RUTAS DEL APARTADO DE DEVOLUCIÓN========================================================
 
 @app.route('/devolucion')
-@login_required
+#SE REMPLEAZO MIENTRAS
 def devolucion():
     return render_template('devolucion.html')   #prueba mientras se verifica la parte del dashboard 
 
 @app.route('/api/registrar_devolucion', methods=['POST'])
-@login_required
+#SE REMPLEAZO MIENTRAS
 def registrar_devolucion():
     data = request.get_json()
     if not data or 'id_venta' not in data:
@@ -813,7 +897,7 @@ def registrar_devolucion():
 
 
 @app.route('/api/buscar_venta')
-@login_required
+#SE REMPLEAZO MIENTRAS
 def buscar_venta():
     buscar = request.args.get('buscar')
     fecha = request.args.get('fecha')
@@ -924,7 +1008,7 @@ def buscar_venta():
 #===========================================RUTAS DEL APARTADO DE APARTADO========================================================
 
 @app.route('/apartado')
-@login_required
+#SE REMPLEAZO MIENTRAS
 def apartado():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1362,7 +1446,7 @@ def cancelar_apartado():
 
 # Página del corte de caja
 @app.route('/corte')
-@login_required
+#SE REMPLEAZO MIENTRAS
 def corte():
     return render_template('corte.html')
 
@@ -1401,7 +1485,7 @@ def estado_caja():
 
 #Para abrir la caja
 @app.route('/api/caja/abrir', methods=['POST'])
-@login_required
+#SE REMPLEAZO MIENTRAS
 def abrir_caja():
     try:
         conn = get_db_connection()
@@ -1545,7 +1629,7 @@ def cerrar_caja():
         conn.close()
 
 @app.route('/api/caja/datos-corte', methods=['GET'])
-@login_required
+#SE REMPLEAZO MIENTRAS
 def obtener_datos_corte():
     try:
         conn = get_db_connection()

@@ -1,11 +1,29 @@
+
+
 @import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700,800,900');
-body{
-	font-family: 'Poppins', sans-serif;
-	font-weight: 300;
-	line-height: 1.7;
-	color: #000000;
-	background-color: #ffffff;
-  padding-top: 100px; /* Ajusta el valor según lo necesites */
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  background: var(--background);
+  color: var(--text-color);
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../img/foto1.jpg'); /* Ruta de la imagen */
+  background-size: cover;
+  background-position: center;
+  
+  z-index: -1;
+  filter: blur(8px); /* Aplica el efecto borroso */
+  pointer-events: none; /* Asegura que no interfiera con clics */
 }
 
 h1 {
@@ -13,7 +31,7 @@ h1 {
   top: 100px; /* Ajusta el valor según lo necesites */
   left: 50%;
   transform: translateX(-50%);
-  color: #000000;
+  color: #E5E0DB;
   text-align: center;
 }
 
@@ -67,7 +85,7 @@ display: none;
   padding: 0;
   margin: 10px auto;
   cursor: pointer;
-  background-color: #ff5cdc;
+  background-color: #D2AB90;
 }
 .checkbox:checked + label:before,
 .checkbox:not(:checked) + label:before{
@@ -76,8 +94,8 @@ display: none;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  color: #ff5cdc;
-  background-color: #000000;
+  color: #D2AB90;
+  background-color: #E5E0DB;
   font-family: 'unicons';
   content: '\eb4f';
   z-index: 20;
@@ -112,7 +130,7 @@ display: none;
 .card-front, .card-back {
   width: 100%;
   height: 100%;
-  background-color: #ff5cdc;
+  background-color: #D2AB90;
   /*background-image: url('../img/image.png');*/
   position: absolute;
   border-radius: 6px;
