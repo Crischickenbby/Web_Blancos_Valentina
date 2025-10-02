@@ -11,8 +11,8 @@ app = Flask(__name__, template_folder='app/templates', static_folder='app/static
 
 # Configura la clave secreta desde config.py
 app.secret_key = SECRET_KEY
-
-def login_required(roles=None):
+#
+def login_required(roles=None): #esto sirve para 
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
@@ -195,7 +195,6 @@ def venta():
 
 
 @app.route('/api/registrar_venta', methods=['POST'])
-
 def registrar_venta():
     data = request.get_json()
     user_id = session['user_id']
@@ -208,6 +207,14 @@ def registrar_venta():
 
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # VALIDACIÓN: Verificar si hay caja abierta antes de registrar la venta
+    cur.execute('SELECT 1 FROM "Cash_Cut" WHERE "End_DateTime" IS NULL LIMIT 1;')
+    caja_abierta = cur.fetchone()
+    if not caja_abierta:
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'No hay caja abierta. Debes abrir la caja antes de registrar una venta.'}), 400
 
     try:
         # Fecha y hora actuales como timestamp
@@ -1691,7 +1698,7 @@ def obtener_datos_corte():
             WHERE "ID_Payment_Method" = 3 
             AND "ID_Transaction_Type" = 2
             AND "Date" >= %s
-        ''', (fecha_apertura,))
+        ''', (fecha_apertura,))#el COALESCE es para que si no hay nada en la consulta me regrese un 0 en vez de un null
         transferencias_egreso = cur.fetchone()[0]
 
         # Egresos por tarjetas
@@ -1722,7 +1729,7 @@ def obtener_datos_corte():
 
     except Exception as e:
         print(f'Error: {e}')
-        return jsonify({'error': 'Error al obtener los datos de corte', 'detalle': str(e)}), 500
+        return jsonify({'error': 'Error al obtener los datos de corte', 'detalle': str(e)}), 500 #este es para ver el error en consola y la str(e) es para ver el error en el frontend osea en la pagina de corte
     finally:
         cur.close()
         conn.close()
